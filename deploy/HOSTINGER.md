@@ -83,7 +83,7 @@ Después, la ingesta automática de cada hora mira los últimos 4 días.
 
 ## 6. Dominio y HTTPS
 
-Se recomienda un **subdominio** (p. ej. `hoteles.consultoraltelc.com`) y no una ruta
+Se recomienda un **subdominio** (p. ej. `hoteles.ltelc.tech`) y no una ruta
 (`consultoraltelc.com/hoteles`): cada app queda independiente, se pueden sumar otras
 (`bitacora.…`, `finanzas.…`) en el mismo VPS y la web institucional no se toca.
 
@@ -95,7 +95,7 @@ sudo cp deploy/nginx.conf /etc/nginx/sites-available/gestion-hoteles
 sudo nano /etc/nginx/sites-available/gestion-hoteles     # poner el dominio real
 sudo ln -s /etc/nginx/sites-available/gestion-hoteles /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d hoteles.consultoraltelc.com
+sudo certbot --nginx -d hoteles.ltelc.tech
 ```
 
 ## 7. Usuarios
