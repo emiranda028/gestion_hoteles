@@ -5,6 +5,7 @@ import type { Disponible, FlashDia, Grupo, Hotel, ValoresFlash } from '@/lib/dat
 import { decimal, dinero, entero, pct } from '@/lib/formato'
 import { AvisoDemo, Selector } from './ui'
 import { COLORES } from './colores'
+import LogoHotel from './LogoHotel'
 
 type Props = { demo: boolean; grupos: Grupo[]; hoteles: Hotel[]; flashDias: FlashDia[]; disponibles: Disponible[] }
 
@@ -88,8 +89,9 @@ function ColumnaHotel({ hotel, d, ant }: { hotel: Hotel; d: FlashDia | undefined
   const occAnt = ant && ant.hab ? (100 * ant.ocup) / ant.hab : null
   return (
     <section className="space-y-2">
-      <h2 className="rounded-xl border-b-4 border-acento bg-white px-4 py-3 text-center text-lg font-bold uppercase tracking-wide shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-        {hotel.nombre}
+      <h2 className="flex h-24 items-center justify-center rounded-xl border-b-4 border-acento bg-white px-4 py-2 shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
+        title={hotel.nombre}>
+        <LogoHotel id={hotel.id} nombre={hotel.nombre} alto="h-16" className="text-lg" />
       </h2>
       {!d ? (
         <Caja className="h-40"><p className="text-sm text-neutral-500">No llegó el Manager Flash de esta fecha</p></Caja>

@@ -4,6 +4,7 @@ import type { HFDia, Hotel } from '@/lib/datos'
 import { dinero, entero, pct } from '@/lib/formato'
 import { fechaTexto } from './ResumenEjecutivo'
 import { AvisoDemo } from './ui'
+import LogoHotel from './LogoHotel'
 
 type Props = { demo: boolean; hoteles: Hotel[]; hfDias: HFDia[] }
 
@@ -74,6 +75,7 @@ const CAMPOS: Campo[] = [
 export default function ComparativaHF({ demo, hoteles, hfDias }: Props) {
   const activos = hoteles.filter((h) => h.activo)
   const [hid, setHid] = useState(activos[0]?.id ?? '')
+  const hotel = activos.find((h) => h.id === hid)
   const indice = useMemo(() => new Map(hfDias.filter((d) => d.h === hid).map((d) => [d.f, d])), [hfDias, hid])
   const fechas = useMemo(() => {
     const historia = [...indice.values()].filter((d) => d.tipo === 'History').map((d) => d.f).sort()
@@ -92,7 +94,7 @@ export default function ComparativaHF({ demo, hoteles, hfDias }: Props) {
   return (
     <div className="space-y-4">
       {demo && <AvisoDemo />}
-      <div className={`${sombra} grid gap-3 p-4 sm:grid-cols-[1fr_1fr_1.4fr] sm:items-end`}>
+      <div className={`${sombra} grid items-center gap-3 p-4 sm:grid-cols-[1fr_1fr_1.4fr_auto]`}>
         <h1 className="text-base font-bold uppercase tracking-wide">Comparativa H&amp;F</h1>
         <label className="flex flex-col gap-1 text-xs font-semibold text-acento">
           Empresa
@@ -108,6 +110,11 @@ export default function ComparativaHF({ demo, hoteles, hfDias }: Props) {
             {fechas.map((f) => <option key={f} value={f}>{fechaTexto(f)}</option>)}
           </select>
         </label>
+        {hotel && (
+          <div className="flex h-16 items-center justify-center border-t border-neutral-100 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+            <LogoHotel id={hotel.id} nombre={hotel.nombre} alto="h-14" />
+          </div>
+        )}
       </div>
 
       {!hoy ? (

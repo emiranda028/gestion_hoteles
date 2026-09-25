@@ -30,7 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* Arimo: métricas de Helvetica/Arial para equipos que no tienen Helvetica */}
-        <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
         <Nav usuario={u ? { nombre: u.nombre, admin: u.rol === 'admin' } : null} verPaises={verPaises} />

@@ -5,6 +5,7 @@ import { verCuadroDisponibilidades } from '@/app/acciones'
 import { decimal, dinero, entero } from '@/lib/formato'
 import { Medidor, Rubros, fechaTexto } from './ResumenEjecutivo'
 import { AvisoDemo } from './ui'
+import LogoHotel from './LogoHotel'
 
 type Props = { demo: boolean; hoteles: Hotel[]; flashDias: FlashDia[]; disponibles: Disponible[] }
 
@@ -87,7 +88,7 @@ export default function ResumenHotel({ demo, hoteles, flashDias, disponibles }: 
   return (
     <div className="space-y-4">
       {demo && <AvisoDemo />}
-      <div className={`${sombra} grid gap-3 p-4 sm:grid-cols-[1fr_1fr_1.4fr] sm:items-end`}>
+      <div className={`${sombra} grid items-center gap-3 p-4 sm:grid-cols-[1fr_1fr_1.4fr_auto]`}>
         <h1 className="text-base font-bold uppercase tracking-wide">Resumen ejecutivo</h1>
         <label className="flex flex-col gap-1 text-xs font-semibold text-acento">
           Empresa
@@ -103,6 +104,11 @@ export default function ResumenHotel({ demo, hoteles, flashDias, disponibles }: 
             {fechas.map((f) => <option key={f} value={f}>{fechaTexto(f)}</option>)}
           </select>
         </label>
+        {hotel && (
+          <div className="flex h-16 items-center justify-center border-t border-neutral-100 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+            <LogoHotel id={hotel.id} nombre={hotel.nombre} alto="h-14" />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr_1.35fr] [&>*]:min-w-0">
