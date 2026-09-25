@@ -6,6 +6,7 @@
   --color-marca-claro: #f4f4f4;
   --color-acento: #b5121b;
   --font-sans: "Helvetica Neue", Helvetica, Arimo, Arial, sans-serif;
+  --font-marca: Sora, "Helvetica Neue", Arial, sans-serif; /* solo para la marca LTELC */
 }
 
 body {

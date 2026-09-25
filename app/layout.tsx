@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
+import { FirmaLtelc } from '@/components/LogoLtelc'
 import Nav from '@/components/Nav'
 import { usuarioActual } from '@/lib/usuarios'
+import '@fontsource/sora/600.css'
+import '@fontsource/sora/800.css'
 import 'flag-icons/css/flag-icons.min.css'
 import './globals.css'
 
@@ -26,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="no-imprimir border-t border-neutral-200 bg-white">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-neutral-500 sm:px-6">
             <span>Gestión Hotelera</span>
-            <span>Hecho por <strong className="font-bold tracking-wide text-marca">LTELC BI</strong></span>
+            <FirmaLtelc />
           </div>
         </footer>
       </body>
