@@ -127,6 +127,23 @@ def main(desde=date(2024, 1, 1), hoy=date(2026, 9, 25)):
             w = csv.DictWriter(f, fieldnames=cols)
             w.writeheader()
             w.writerows(filas)
+    # huéspedes por país (ficticio), mismo formato que la planilla de Drive
+    mercados = [("ARGENTINA", "AMÉRICA", 1500), ("ESTADOS UNIDOS", "AMÉRICA", 1400), ("BRASIL", "AMÉRICA", 300),
+                ("CHILE", "AMÉRICA", 120), ("MÉXICO", "AMÉRICA", 110), ("ESPAÑA", "EUROPA", 90), ("ALEMANIA", "EUROPA", 70),
+                ("CHINA", "ASIA", 80), ("JAPÓN", "ASIA", 40), ("AUSTRALIA", "OCEANÍA", 30), ("OTROS", "SIN REFERENCIA", 50)]
+    filas_paises = []
+    for anio in range(2023, hoy.year + 1):
+        for mes in range(1, 13):
+            if date(anio, mes, 1) >= hoy.replace(day=1):
+                break
+            for pais, cont, base in mercados:
+                filas_paises.append({"hotel": "demo-centro", "mes": f"{anio}-{mes:02d}", "pais": pais, "continente": cont,
+                                     "huespedes": round(base * rnd.uniform(0.7, 1.3) * (1 + 0.05 * (anio - 2023)))})
+    with (out / "paises.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["hotel", "mes", "pais", "continente", "huespedes"])
+        w.writeheader()
+        w.writerows(filas_paises)
+
     for viejo in ("diario.csv", "procedencia.csv"):
         (out / viejo).unlink(missing_ok=True)
     print(f"Demo en {out}: {len(hf)} días H&F, {len(flash)} filas flash, {len(pickup)} fotos de pick up")

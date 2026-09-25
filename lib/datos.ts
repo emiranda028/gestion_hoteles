@@ -19,12 +19,20 @@ export type FlashHotel = {
   anterior: Record<string, [number | null, number | null, number | null]> | null // mismo día del año anterior
 }
 // Valores del día del Manager Flash (para el resumen ejecutivo)
-export type FlashDia = {
+export type ValoresFlash = { hab: number; ocup: number; pax: number; adr: number; rev: number; ayb: number; otros: number; tot: number }
+export type FlashDia = ValoresFlash & {
   h: string; f: string // fecha de negocio
   r: string // fecha del informe (día en que llega)
-  hab: number; ocup: number; pax: number; adr: number; rev: number; ayb: number; otros: number; tot: number
+  mes: ValoresFlash // acumulado del mes
+  anio: ValoresFlash // acumulado del año
+}
+// Una fila del History & Forecast con todas sus columnas
+export type HFDia = {
+  h: string; f: string; tipo: string; occ: number; arr: number; comp: number; hu: number; dind: number; dgrp: number
+  pct: number; rev: number; adr: number; dep: number; noshow: number | null; ooo: number; pax: number
 }
 export type BonvoyMes = { mes: string; h: string; nivel: string; n: number }
+export type BonvoyDia = { f: string; h: string; nivel: string; n: number }
 export type PaisMes = { mes: string; h: string; pais: string; continente: string; n: number }
 // Disponibilidades tal cual las informa cada grupo: pesos en pesos, dólares y euros en su moneda,
 // y el tipo de cambio que usa el grupo.
@@ -63,7 +71,9 @@ export type Datos = {
   pickup: FotoPickup[]
   flash: FlashHotel[]
   flashDias: FlashDia[]
+  hfDias: HFDia[]
   bonvoy: BonvoyMes[]
+  bonvoyDias: BonvoyDia[]
   paises: PaisMes[]
   disponibles: Disponible[]
   cuentas: CuentaBanco[]
@@ -163,6 +173,13 @@ export function cargarDatos(): Datos {
       forecast.push({ f: r.fecha, h: r.hotel, ocup, disp, ingHab, grp: num(r.deduct_group) })
     }
   }
+  const numN = (v: string) => (v === '' ? null : num(v))
+  const hfDias: HFDia[] = hfFilas.map((r) => ({
+    h: r.hotel, f: r.fecha, tipo: r.fecha <= (ultimaHistoria.get(r.hotel) ?? '') ? 'History' : 'Forecast',
+    occ: num(r.total_occ), arr: num(r.arr_rooms), comp: num(r.comp_rooms), hu: num(r.house_use),
+    dind: num(r.deduct_indiv), dgrp: num(r.deduct_group), pct: num(r.occ_pct), rev: num(r.room_revenue),
+    adr: num(r.adr), dep: num(r.dep_rooms), noshow: numN(r.no_show), ooo: num(r.ooo), pax: num(r.personas),
+  })).sort((a, b) => a.f.localeCompare(b.f) || a.h.localeCompare(b.h))
   dias.sort((a, b) => a.f.localeCompare(b.f) || a.h.localeCompare(b.h))
   forecast.sort((a, b) => a.f.localeCompare(b.f) || a.h.localeCompare(b.h))
 
@@ -185,16 +202,20 @@ export function cargarDatos(): Datos {
   for (const [k, c] of flashIdx) {
     const [h, f] = k.split('|')
     if (f < corteFlash) continue
-    const v = (n: string) => c[n]?.[0] ?? 0
+    const valores = (i: 0 | 1 | 2): ValoresFlash => {
+      const v = (n: string) => c[n]?.[i] ?? 0
+      const ocup = c['Rooms Occupied minus House Use']?.[i] ?? v('Rooms Occupied')
+      const rev = v('Room Revenue')
+      return {
+        hab: v('Total Rooms in Hotel'), ocup, pax: v('Total In-House Persons'),
+        adr: ocup ? rev / ocup : v('ADR'), // como en Power BI: ingresos de habitaciones / habitaciones vendidas
+        rev, ayb: v('Food And Beverage Revenue'), otros: v('Other Revenue'),
+        tot: c['Total Revenue']?.[i] ?? v('Ventas Totales'),
+      }
+    }
     const siguiente = new Date(new Date(f).getTime() + 864e5).toISOString().slice(0, 10)
-    flashDias.push({
-      h, f, r: fechasReporte.get(k) || siguiente,
-      hab: v('Total Rooms in Hotel'), ocup: c['Rooms Occupied minus House Use']?.[0] ?? v('Rooms Occupied'),
-      pax: v('Total In-House Persons'), adr: 0, rev: v('Room Revenue'), ayb: v('Food And Beverage Revenue'),
-      otros: v('Other Revenue'), tot: c['Total Revenue']?.[0] ?? v('Ventas Totales'),
-    })
-    const x = flashDias[flashDias.length - 1]
-    x.adr = x.ocup ? x.rev / x.ocup : v('ADR') // como en Power BI: ingresos de habitaciones / habitaciones vendidas
+    flashDias.push({ h, f, r: fechasReporte.get(k) || siguiente, ...valores(0), mes: valores(1), anio: valores(2) })
+
   }
 
   const pickup: FotoPickup[] = leer('pickup.csv').map((r) => ({
@@ -202,9 +223,11 @@ export function cargarDatos(): Datos {
     occ: num(r.occ_pct),
   }))
 
+  const bonvoyDias: BonvoyDia[] = []
   const bonvoyIdx = new Map<string, BonvoyMes>()
   for (const r of leer('bonvoy.csv')) {
     const mes = r.fecha.slice(0, 7)
+    if (r.fecha >= corteFlash) bonvoyDias.push({ f: r.fecha, h: r.hotel, nivel: r.nivel, n: num(r.cantidad) })
     const k = `${mes}|${r.hotel}|${r.nivel}`
     const x = bonvoyIdx.get(k)
     if (x) x.n += num(r.cantidad)
@@ -256,7 +279,9 @@ export function cargarDatos(): Datos {
     pickup,
     flash,
     flashDias,
+    hfDias,
     bonvoy: [...bonvoyIdx.values()],
+    bonvoyDias,
     paises: leer('paises.csv').map((r) => ({ mes: r.mes, h: r.hotel, pais: r.pais, continente: r.continente, n: num(r.huespedes) })),
     disponibles,
     cuentas,

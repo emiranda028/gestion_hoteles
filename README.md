@@ -18,6 +18,9 @@ data/  hf.csv · flash.csv · pickup.csv · bonvoy.csv · disponibilidades.csv �
    ▼
 Web app (Next.js)
    ├── Resumen ............. resumen ejecutivo comparado por grupo (como la primera hoja de Power BI)
+   ├── Manager Flash ....... día / mes / año por hotel, ventas por rubro, ADR, RevPar, últimos 30 días
+   ├── H&F ................. ocupación real y proyectada del mes, detalle del día, detalle diario con semáforos
+   ├── Por país ............ globo terráqueo, ranking con banderas, argentinos vs extranjeros, mercados que crecen
    ├── Tablero ............. Manager Flash del día + ocupación, ADR, RevPAR, ingresos, Bonvoy, países, comparativo
    ├── Forecast y pick up .. on the books por mes, pick up diario y semanal, próximos 30/60/90 días
    ├── Disponibilidades .... saldos por grupo (Panatel, Numah) tal como los informan, evolución y detalle

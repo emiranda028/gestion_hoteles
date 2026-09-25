@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
-import type { Disponible, FlashDia, Grupo, Hotel } from '@/lib/datos'
+import type { Disponible, FlashDia, Grupo, Hotel, ValoresFlash } from '@/lib/datos'
 import { decimal, dinero, entero, pct } from '@/lib/formato'
 import { AvisoDemo, Selector } from './ui'
 import { COLORES } from './colores'
@@ -13,7 +13,7 @@ const VERDE = '#1a8f2e'
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-function fechaTexto(f: string) {
+export function fechaTexto(f: string) {
   const d = new Date(f + 'T12:00:00Z')
   return `${DIAS[d.getUTCDay()]}, ${d.getUTCDate()} de ${MESES[d.getUTCMonth()]} de ${d.getUTCFullYear()}`
 }
@@ -31,9 +31,9 @@ function Caja({ titulo, children, className = '', tituloRojo = false }: {
   )
 }
 
-function Medidor({ valor }: { valor: number }) {
+export function Medidor({ valor, color: fijo }: { valor: number; color?: string }) {
   const v = Math.max(0, Math.min(100, valor))
-  const color = v >= UMBRAL_VERDE ? VERDE : COLORES.acento
+  const color = fijo ?? (v >= UMBRAL_VERDE ? VERDE : COLORES.acento)
   const r = 80, cx = 100, cy = 95
   const ang = Math.PI * (1 - v / 100)
   const x = cx + r * Math.cos(ang), y = cy - r * Math.sin(ang)
@@ -48,7 +48,7 @@ function Medidor({ valor }: { valor: number }) {
   )
 }
 
-function Rubros({ d }: { d: FlashDia }) {
+export function Rubros({ d }: { d: ValoresFlash }) {
   const datos = [
     { nombre: 'Alojamiento', v: d.rev, color: COLORES.acento },
     { nombre: 'Alimentos & Bebidas', v: d.ayb, color: '#b3b3b3' },
@@ -57,7 +57,7 @@ function Rubros({ d }: { d: FlashDia }) {
   const total = datos.reduce((s, x) => s + x.v, 0)
   if (!total) return <p className="py-8 text-sm text-neutral-500">Sin ventas informadas</p>
   return (
-    <div className="flex w-full items-center gap-2">
+    <div className="flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
       <div className="h-32 w-32 shrink-0">
         <ResponsiveContainer>
           <PieChart>
@@ -74,7 +74,7 @@ function Rubros({ d }: { d: FlashDia }) {
             <span>
               {x.nombre}
               <br />
-              <span className="tabular-nums text-neutral-600">USD {miles(x.v)} ({pct((100 * x.v) / total, 2)})</span>
+              <span className="whitespace-nowrap tabular-nums text-neutral-600">USD {miles(x.v)} ({pct((100 * x.v) / total, 2)})</span>
             </span>
           </li>
         ))}
