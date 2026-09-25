@@ -179,7 +179,10 @@ def main(argv=None) -> int:
     pa.add_argument("archivo")
     pa.set_defaults(fn=cmd_paises)
     args = p.parse_args(argv)
-    return args.fn(args)
+    if args.cmd == "inspeccionar":
+        return args.fn(args)
+    with almacen.bloqueo():
+        return args.fn(args)
 
 
 if __name__ == "__main__":

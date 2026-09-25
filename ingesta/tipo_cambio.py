@@ -44,4 +44,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    with almacen.bloqueo():
+        sys.exit(main())

@@ -12,7 +12,9 @@ Tablas (todas en data/):
 """
 from __future__ import annotations
 
+import contextlib
 import csv
+import fcntl
 import json
 import os
 from datetime import date, datetime, timezone
@@ -43,6 +45,26 @@ TABLAS = {
 }
 
 
+@contextlib.contextmanager
+def bloqueo():
+    """Una sola ingesta a la vez (la del cron y una manual): si otra está escribiendo, se espera a que termine."""
+    DATA.mkdir(parents=True, exist_ok=True)
+    with open(DATA / ".datos.lock", "w") as f:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print("Hay otra ingesta en curso: esperando a que termine...", flush=True)
+            fcntl.flock(f, fcntl.LOCK_EX)
+        yield
+
+
+def _reemplazar(destino: Path, escribir_en) -> None:
+    """Escribe en un archivo temporal y lo cambia de golpe: nunca queda un archivo a medio escribir."""
+    tmp = destino.with_name(destino.name + ".tmp")
+    escribir_en(tmp)
+    os.replace(tmp, destino)
+
+
 def ruta(tabla: str) -> Path:
     return DATA / f"{tabla}.csv"
 
@@ -57,10 +79,14 @@ def leer(tabla: str) -> list[dict]:
 
 def escribir(tabla: str, columnas: list[str], filas: list[dict]) -> None:
     DATA.mkdir(parents=True, exist_ok=True)
-    with ruta(tabla).open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=columnas, extrasaction="ignore")
-        w.writeheader()
-        w.writerows(filas)
+
+    def volcar(destino: Path) -> None:
+        with destino.open("w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=columnas, extrasaction="ignore")
+            w.writeheader()
+            w.writerows(filas)
+
+    _reemplazar(ruta(tabla), volcar)
 
 
 def fmt(v) -> str:
@@ -128,7 +154,8 @@ def marcar_procesado(claves: dict[str, dict]) -> None:
     reg = _registro()
     reg.update(claves)
     DATA.mkdir(parents=True, exist_ok=True)
-    REGISTRO.write_text(json.dumps(reg, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
+    texto = json.dumps(reg, ensure_ascii=False, indent=1, sort_keys=True)
+    _reemplazar(REGISTRO, lambda t: t.write_text(texto, encoding="utf-8"))
 
 
 def ahora() -> str:
@@ -194,4 +221,4 @@ def exportar_excel(hoteles: list[dict]) -> None:
     ws.append(["Fecha", "BNA vendedor"])
     for f in leer("tipo_cambio"):
         ws.append([d(f["fecha"]), n(f["ars_por_usd"])])
-    wb.save(EXCEL)
+    _reemplazar(EXCEL, wb.save)
