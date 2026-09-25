@@ -17,11 +17,15 @@ rm -rf .next   # compilación limpia (evita arrastrar errores de un intento ante
 npm run build
 
 echo "» Arranque con PM2"
-command -v pm2 >/dev/null || sudo npm install -g pm2
+command -v pm2 >/dev/null || npm install -g pm2
 pm2 startOrReload deploy/ecosystem.config.cjs
 pm2 save
+# que la app vuelva a levantarse sola si se reinicia el servidor
+pm2 startup systemd -u "$(whoami)" --hp "$HOME" >/dev/null || true
 
 echo "» Tarea programada: ingesta cada hora (minuto 10)"
+command -v crontab >/dev/null || apt-get install -y cron
 LINEA="10 * * * * $(pwd)/deploy/ingesta.sh >> $DATA_DIR/ingesta.log 2>&1"
-( crontab -l 2>/dev/null | grep -v 'deploy/ingesta.sh' ; echo "$LINEA" ) | crontab -
+( crontab -l 2>/dev/null | grep -v 'deploy/ingesta.sh' || true ; echo "$LINEA" ) | crontab -
+crontab -l | grep -q 'deploy/ingesta.sh' && echo "  ok: la ingesta quedó programada"
 echo "Listo. App en el puerto ${PORT:-3000}; configurar el dominio (ver deploy/HOSTINGER.md)."
