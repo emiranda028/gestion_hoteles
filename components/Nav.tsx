@@ -4,9 +4,11 @@ import { usePathname } from 'next/navigation'
 
 const LINKS = [
   { href: '/', texto: 'Tablero' },
+  { href: '/pickup', texto: 'Forecast y pick up' },
+  { href: '/disponibilidades', texto: 'Disponibilidades' },
   { href: '/proyecciones', texto: 'Proyecciones' },
-  { href: '/simulador', texto: 'Simulador de gestión' },
-  { href: '/datos', texto: 'Datos e ingesta' },
+  { href: '/simulador', texto: 'Simulador' },
+  { href: '/datos', texto: 'Datos' },
 ]
 
 export default function Nav() {

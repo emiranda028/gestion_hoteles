@@ -3,12 +3,13 @@ import { useMemo, useState } from 'react'
 import {
   Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import type { Datos } from '@/lib/datos'
+import type { datosTablero } from '@/lib/datos'
+import FlashDelDia from './FlashDelDia'
 import {
   type Moneda, agregar, agrupar, anioAnterior, filtrar, mesDe, serie, sumarDias, variacion,
 } from '@/lib/kpi'
 import {
-  bandera, decimal, dinero, entero, fechaCorta, fechaLarga, mesCorto, pct, variacionTexto,
+  decimal, dinero, entero, fechaCorta, fechaLarga, mesCorto, pct, variacionTexto,
 } from '@/lib/formato'
 import { AvisoDemo, Kpi, Segmentado, Selector, Tarjeta } from './ui'
 
@@ -40,14 +41,15 @@ function rango(p: Periodo, hasta: string, desdeDatos: string, custom: [string, s
   }
 }
 
+const NIVELES = ['Ambassador Elite (AMB)', 'Titanium Elite (TTM)', 'Platinum Elite (PLT)', 'Gold Elite (GLD)', 'Silver Elite (SLR)', 'Member (MRD)']
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const COLORES = { hab: '#0f4c5c', ayb: '#e36414', otros: '#9a9a9a', occ: '#0f4c5c', adr: '#e36414', ant: '#94a3b8' }
 
-export default function Tablero({ datos }: { datos: Datos }) {
+export default function Tablero({ datos }: { datos: ReturnType<typeof datosTablero> }) {
   const [hotel, setHotel] = useState<string>('todos')
   const [periodo, setPeriodo] = useState<Periodo>('30d')
   const [custom, setCustom] = useState<[string, string]>([sumarDias(datos.hasta, -29), datos.hasta])
-  const [moneda, setMoneda] = useState<Moneda>(datos.hayTipoCambio ? 'usd' : 'local')
+  const [moneda, setMoneda] = useState<Moneda>('usd')
   const cod = moneda === 'usd' ? 'USD' : 'ARS'
 
   const [desde, hasta] = rango(periodo, datos.hasta, datos.desde, custom)
@@ -95,20 +97,16 @@ export default function Tablero({ datos }: { datos: Datos }) {
     })
   }, [actual, moneda])
 
-  const paises = useMemo(() => {
+  const bonvoy = useMemo(() => {
     const mDesde = desde.slice(0, 7), mHasta = hasta.slice(0, 7)
-    const tot = new Map<string, { pais: string; iso2: string; pax: number }>()
-    for (const r of datos.procedencia) {
+    const tot = new Map<string, number>()
+    for (const r of datos.bonvoy) {
       if (r.mes < mDesde || r.mes > mHasta || (filtroHoteles && !filtroHoteles.has(r.h))) continue
-      const k = r.iso2 || r.pais
-      const v = tot.get(k)
-      if (v) v.pax += r.pax
-      else tot.set(k, { pais: r.pais, iso2: r.iso2, pax: r.pax })
+      tot.set(r.nivel, (tot.get(r.nivel) ?? 0) + r.n)
     }
-    const lista = [...tot.values()].sort((x, y) => y.pax - x.pax)
-    const total = lista.reduce((s, x) => s + x.pax, 0)
-    return { lista: lista.slice(0, 10), total }
-  }, [datos.procedencia, desde, hasta, filtroHoteles])
+    const lista = NIVELES.filter((n) => tot.has(n)).map((nivel) => ({ nivel, n: tot.get(nivel)! }))
+    return { lista, total: lista.reduce((s, x) => s + x.n, 0) }
+  }, [datos.bonvoy, desde, hasta, filtroHoteles])
 
   const varPct = (x: number, y: number) => ({
     texto: hayPrevio ? `${variacionTexto(variacion(x, y))} vs año ant.` : 'sin año anterior',
@@ -148,15 +146,15 @@ export default function Tablero({ datos }: { datos: Datos }) {
               ))}
             </div>
           )}
-          {datos.hayTipoCambio && (
-            <Segmentado
-              valor={moneda}
-              onChange={setMoneda}
-              opciones={[{ valor: 'usd', texto: 'USD' }, { valor: 'local', texto: datos.monedaLocal }]}
-            />
-          )}
+          <Segmentado
+            valor={moneda}
+            onChange={setMoneda}
+            opciones={[{ valor: 'usd', texto: 'USD' }, { valor: 'ars', texto: 'ARS (BNA)' }]}
+          />
         </div>
       </div>
+
+      <FlashDelDia flash={datos.flash} hoteles={datos.hoteles} />
 
       {actual.length === 0 ? (
         <Tarjeta><p className="text-sm text-slate-500">No hay datos para el período elegido.</p></Tarjeta>
@@ -230,18 +228,18 @@ export default function Tablero({ datos }: { datos: Datos }) {
               </div>
             </Tarjeta>
 
-            <Tarjeta titulo="Procedencia de huéspedes">
-              {paises.total === 0 ? (
-                <p className="text-sm text-slate-500">Los reportes del período no traen procedencia.</p>
+            <Tarjeta titulo="Llegadas de socios Bonvoy">
+              {bonvoy.total === 0 ? (
+                <p className="text-sm text-slate-500">Sin llegadas Bonvoy informadas en el período.</p>
               ) : (
                 <ul className="space-y-2">
-                  {paises.lista.map((x) => {
-                    const share = (100 * x.pax) / paises.total
+                  {bonvoy.lista.map((x) => {
+                    const share = (100 * x.n) / bonvoy.total
                     return (
-                      <li key={x.iso2 || x.pais} className="text-sm">
+                      <li key={x.nivel} className="text-sm">
                         <div className="flex justify-between">
-                          <span>{bandera(x.iso2)} {x.pais}</span>
-                          <span className="tabular-nums text-slate-500">{entero(x.pax)} · {pct(share)}</span>
+                          <span>{x.nivel}</span>
+                          <span className="tabular-nums text-slate-500">{entero(x.n)} · {pct(share)}</span>
                         </div>
                         <div className="mt-1 h-1.5 rounded bg-slate-100">
                           <div className="h-1.5 rounded bg-marca" style={{ width: `${share}%` }} />
@@ -249,6 +247,7 @@ export default function Tablero({ datos }: { datos: Datos }) {
                       </li>
                     )
                   })}
+                  <li className="pt-1 text-xs text-slate-500">{entero(bonvoy.total)} llegadas de socios en el período</li>
                 </ul>
               )}
             </Tarjeta>
@@ -286,9 +285,9 @@ export default function Tablero({ datos }: { datos: Datos }) {
               </table>
             </div>
           </Tarjeta>
-          {moneda === 'usd' && (
+          {moneda === 'ars' && (
             <p className="text-xs text-slate-500">
-              Montos convertidos a USD con el tipo de cambio de cada día. Las variaciones en {datos.monedaLocal} incluyen inflación.
+              Montos en pesos convertidos con el dólar BNA vendedor de cada día. Las variaciones en pesos incluyen inflación.
             </p>
           )}
         </>

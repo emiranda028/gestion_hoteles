@@ -4,20 +4,56 @@ import path from 'node:path'
 import { parseCsv } from './csv.ts'
 import type { Dia } from './kpi.ts'
 
-export type Hotel = { id: string; nombre: string }
-export type Procedencia = { mes: string; h: string; iso2: string; pais: string; pax: number }
+// Todo se trabaja en dólares (así vienen los reportes de Opera). El tipo de cambio BNA vendedor
+// solo se usa para ver en pesos y para pasar a dólares los saldos en pesos de las disponibilidades.
+
+export type Hotel = { id: string; nombre: string; grupo: string; habitaciones: number }
+export type Grupo = { id: string; nombre: string }
+
+export type DiaForecast = { f: string; h: string; ocup: number; disp: number; ingHab: number; grp: number }
+export type FotoPickup = { r: string; h: string; mes: string; noches: number; grp: number; rev: number; occ: number }
+export type FlashHotel = {
+  h: string
+  fecha: string
+  c: Record<string, [number | null, number | null, number | null]>
+  anterior: Record<string, [number | null, number | null, number | null]> | null // mismo día del año anterior
+}
+export type BonvoyMes = { mes: string; h: string; nivel: string; n: number }
+export type Disponible = {
+  g: string
+  f: string
+  tc: number // BNA vendedor usado para convertir
+  pesos: number // bancos en pesos + inversiones (ARS)
+  bancosPesos: number
+  inversiones: number
+  usd: number // dólares (bancos + caja), en moneda original
+  eurArs: number // euros valuados en pesos
+  proyectado: number // cobros - pagos - cheques (ARS)
+  cobros: number
+  pagos: number
+  totalArs: number // total informado por el grupo (con proyectados)
+}
+export type CuentaBanco = {
+  g: string; f: string; seccion: string; empresa: string; banco: string; cuenta: string
+  moneda: string; ars: number; original: number
+}
 export type EstadoIngesta = {
   ejecutado: string
-  archivos: { origen: string; hotel: string | null; fecha: string | null; ok: boolean; avisos: string[] }[]
+  archivos: { origen: string; tipo: string; hotel: string | null; fecha: string | null; ok: boolean; detalle?: string; avisos: string[] }[]
 } | null
 
 export type Datos = {
   demo: boolean
-  monedaLocal: string
-  hayTipoCambio: boolean
   hoteles: Hotel[]
+  grupos: Grupo[]
   dias: Dia[]
-  procedencia: Procedencia[]
+  forecast: DiaForecast[]
+  pickup: FotoPickup[]
+  flash: FlashHotel[]
+  bonvoy: BonvoyMes[]
+  disponibles: Disponible[]
+  cuentas: CuentaBanco[]
+  tipoCambio: { fecha: string; valor: number } | null
   desde: string
   hasta: string
   ingesta: EstadoIngesta
@@ -25,85 +61,180 @@ export type Datos = {
 
 const DATA = path.join(process.cwd(), 'data')
 
-function leer(nombre: string, carpeta = DATA): Record<string, string>[] {
-  const ruta = path.join(carpeta, nombre)
-  return existsSync(ruta) ? parseCsv(readFileSync(ruta, 'utf-8')) : []
-}
+const HOTELES: Hotel[] = [
+  { id: 'marriott', nombre: 'Marriott Buenos Aires', grupo: 'panatel', habitaciones: 300 },
+  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', grupo: 'panatel', habitaciones: 194 },
+  { id: 'sheraton-bcr', nombre: 'Sheraton Bariloche', grupo: 'panatel', habitaciones: 161 },
+  { id: 'city-express', nombre: 'City Express Palermo', grupo: 'numah', habitaciones: 51 },
+  { id: 'maitei', nombre: 'Maitei Posadas', grupo: 'numah', habitaciones: 98 },
+  // datos de demostración (data/demo)
+  { id: 'demo-centro', nombre: 'Hotel Demo Centro', grupo: 'demo', habitaciones: 220 },
+  { id: 'demo-costa', nombre: 'Hotel Demo Costa', grupo: 'demo', habitaciones: 140 },
+]
+const GRUPOS: Grupo[] = [
+  { id: 'panatel', nombre: 'Panatel' },
+  { id: 'numah', nombre: 'Numah' },
+  { id: 'demo', nombre: 'Grupo Demo' },
+]
 
 const num = (v: string | undefined) => {
+  if (v === undefined || v === '') return 0
   const n = Number(v)
-  return v === undefined || v === '' || Number.isNaN(n) ? 0 : n
+  return Number.isNaN(n) ? 0 : n
+}
+const numONull = (v: string | undefined) => (v === undefined || v === '' ? null : num(v))
+
+function anioAntes(f: string) {
+  return `${Number(f.slice(0, 4)) - 1}${f.slice(4)}`
 }
 
 let cache: Datos | null = null
 
 export function cargarDatos(): Datos {
   if (cache && process.env.NODE_ENV === 'production') return cache
-  let carpeta = DATA
-  let filas = leer('diario.csv')
-  const demo = filas.length === 0
-  if (demo) {
-    carpeta = path.join(DATA, 'demo')
-    filas = leer('diario.csv', carpeta)
+  const demo = !existsSync(path.join(DATA, 'hf.csv'))
+  const carpeta = demo ? path.join(DATA, 'demo') : DATA
+  const leer = (n: string) => {
+    const r = path.join(carpeta, n)
+    return existsSync(r) ? parseCsv(readFileSync(r, 'utf-8')) : []
   }
 
-  // Tipo de cambio: se completa hacia adelante para días sin cotización (fines de semana).
-  const tcFilas = leer('tipo_cambio.csv', carpeta).sort((a, b) => a.fecha.localeCompare(b.fecha))
-  const tcFechas = tcFilas.map((r) => r.fecha)
-  const tcValores = tcFilas.map((r) => num(r.ars_por_usd))
+  // --- tipo de cambio (completado hacia adelante para fines de semana y feriados)
+  const tcFilas = leer('tipo_cambio.csv').sort((a, b) => a.fecha.localeCompare(b.fecha))
+  const tcF = tcFilas.map((r) => r.fecha)
+  const tcV = tcFilas.map((r) => num(r.ars_por_usd))
   const tcPara = (f: string): number | null => {
-    let lo = 0, hi = tcFechas.length - 1, res = -1
+    let lo = 0, hi = tcF.length - 1, res = -1
     while (lo <= hi) {
       const mid = (lo + hi) >> 1
-      if (tcFechas[mid] <= f) { res = mid; lo = mid + 1 } else hi = mid - 1
+      if (tcF[mid] <= f) { res = mid; lo = mid + 1 } else hi = mid - 1
     }
-    return res >= 0 ? tcValores[res] : tcValores[0] ?? null
+    return res >= 0 ? tcV[res] : tcV[0] ?? null
   }
 
-  const hoteles = new Map<string, string>()
-  const dias: Dia[] = filas
-    .filter((r) => r.fecha && r.hotel_id)
-    .map((r) => {
-      hoteles.set(r.hotel_id, r.hotel || r.hotel_id)
-      const ingHab = num(r.ingreso_habitaciones)
-      const ingAyb = num(r.ingreso_ayb)
-      const ingOtros = num(r.ingreso_otros)
-      return {
-        f: r.fecha,
-        h: r.hotel_id,
-        disp: num(r.habitaciones_disponibles),
-        ocup: num(r.habitaciones_ocupadas),
-        pax: num(r.huespedes),
-        ingHab,
-        ingAyb,
-        ingOtros,
-        ingTot: num(r.ingreso_total) || ingHab + ingAyb + ingOtros,
-        tc: tcPara(r.fecha),
-      }
-    })
-    .sort((a, b) => a.f.localeCompare(b.f) || a.h.localeCompare(b.h))
+  // --- flash: índice (hotel|fecha) -> concepto -> [día, mes, año]
+  const flashIdx = new Map<string, Record<string, [number | null, number | null, number | null]>>()
+  for (const r of leer('flash.csv')) {
+    const k = `${r.hotel}|${r.fecha}`
+    let c = flashIdx.get(k)
+    if (!c) flashIdx.set(k, (c = {}))
+    c[r.concepto] = [numONull(r.dia), numONull(r.mes), numONull(r.anio)]
+  }
+  const flashDia = (h: string, f: string, concepto: string) => flashIdx.get(`${h}|${f}`)?.[concepto]?.[0] ?? null
 
-  // La procedencia se agrega por mes para no mandar miles de filas al navegador.
-  const proc = new Map<string, Procedencia>()
-  for (const r of leer('procedencia.csv', carpeta)) {
+  // --- H&F: historia -> días del tablero; forecast -> próximos días
+  const hab = new Map(HOTELES.map((h) => [h.id, h.habitaciones]))
+  const dias: Dia[] = []
+  const forecast: DiaForecast[] = []
+  const hfFilas = leer('hf.csv')
+  const ultimaHistoria = new Map<string, string>()
+  for (const r of hfFilas) {
+    if (r.tipo === 'History' && r.fecha > (ultimaHistoria.get(r.hotel) ?? '')) ultimaHistoria.set(r.hotel, r.fecha)
+  }
+  for (const r of hfFilas) {
+    const occ = num(r.total_occ)
+    const ocup = occ - num(r.house_use)
+    const pct = num(r.occ_pct)
+    const disp = flashDia(r.hotel, r.fecha, 'Total Rooms in Hotel') ?? (pct > 0 ? Math.round(occ / pct) : hab.get(r.hotel) ?? 0)
+    const ingHab = num(r.room_revenue)
+    if (r.tipo === 'History' || r.fecha <= (ultimaHistoria.get(r.hotel) ?? '')) {
+      const ayb = flashDia(r.hotel, r.fecha, 'Food And Beverage Revenue') ?? 0
+      const otros = flashDia(r.hotel, r.fecha, 'Other Revenue') ?? 0
+      const tot = flashDia(r.hotel, r.fecha, 'Total Revenue') ?? flashDia(r.hotel, r.fecha, 'Ventas Totales')
+      dias.push({
+        f: r.fecha, h: r.hotel, disp, ocup, pax: num(r.personas), ingHab, ingAyb: ayb, ingOtros: otros,
+        ingTot: tot ?? ingHab + ayb + otros, tc: tcPara(r.fecha),
+      })
+    } else {
+      forecast.push({ f: r.fecha, h: r.hotel, ocup, disp, ingHab, grp: num(r.deduct_group) })
+    }
+  }
+  dias.sort((a, b) => a.f.localeCompare(b.f) || a.h.localeCompare(b.h))
+  forecast.sort((a, b) => a.f.localeCompare(b.f) || a.h.localeCompare(b.h))
+
+  // --- último flash de cada hotel + el mismo día del año anterior
+  const ultimoFlash = new Map<string, string>()
+  for (const k of flashIdx.keys()) {
+    const [h, f] = k.split('|')
+    if (f > (ultimoFlash.get(h) ?? '')) ultimoFlash.set(h, f)
+  }
+  const flash: FlashHotel[] = [...ultimoFlash].map(([h, fecha]) => ({
+    h, fecha, c: flashIdx.get(`${h}|${fecha}`)!, anterior: flashIdx.get(`${h}|${anioAntes(fecha)}`) ?? null,
+  }))
+
+  const pickup: FotoPickup[] = leer('pickup.csv').map((r) => ({
+    r: r.fecha_reporte, h: r.hotel, mes: r.mes, noches: num(r.noches), grp: num(r.grupo), rev: num(r.revenue),
+    occ: num(r.occ_pct),
+  }))
+
+  const bonvoyIdx = new Map<string, BonvoyMes>()
+  for (const r of leer('bonvoy.csv')) {
     const mes = r.fecha.slice(0, 7)
-    const k = `${mes}|${r.hotel_id}|${r.iso2 || r.pais}`
-    const p = proc.get(k)
-    if (p) p.pax += num(r.huespedes)
-    else proc.set(k, { mes, h: r.hotel_id, iso2: r.iso2, pais: r.pais, pax: num(r.huespedes) })
+    const k = `${mes}|${r.hotel}|${r.nivel}`
+    const x = bonvoyIdx.get(k)
+    if (x) x.n += num(r.cantidad)
+    else bonvoyIdx.set(k, { mes, h: r.hotel, nivel: r.nivel, n: num(r.cantidad) })
   }
 
+  // --- disponibilidades: un registro por grupo y día
+  const bloques = new Map<string, Record<string, string>[]>()
+  for (const r of leer('disponibilidades.csv')) {
+    const k = `${r.grupo}|${r.fecha}`
+    const b = bloques.get(k)
+    if (b) b.push(r)
+    else bloques.set(k, [r])
+  }
+  const disponibles: Disponible[] = [...bloques].map(([k, filas]) => {
+    const [g, f] = k.split('|')
+    const suma = (concepto: string, tipo?: string, moneda?: string) =>
+      filas.filter((x) => x.concepto === concepto && (!tipo || x.tipo_moneda === tipo) && (!moneda || x.moneda === moneda))
+        .reduce((s, x) => s + num(x.importe), 0)
+    const tcGrupo = suma('Tipo de cambio USD')
+    const tc = tcPara(f) ?? tcGrupo
+    const cobros = suma('Cobranzas Proyectadas', undefined, 'Local') + suma('Efectivo - Recaudación') +
+      suma('Aportes socios') + suma('Cobranzas Proyectadas', 'USD', 'Extranjera') * tc
+    const pagos = suma('Cheques emitidos') + suma('Pagos programados')
+    const bancosPesos = suma('Bancos pesos')
+    const inversiones = suma('Inversiones')
+    return {
+      g, f, tc, bancosPesos, inversiones, pesos: bancosPesos + inversiones,
+      usd: suma('Moneda extranjera', 'USD', 'Extranjera'),
+      eurArs: suma('Moneda extranjera', 'EUR', 'Extranjera') * suma('Tipo de cambio EUR'),
+      cobros, pagos, proyectado: cobros + pagos, totalArs: suma('DISPONIBILIDADES'),
+    }
+  }).sort((a, b) => a.f.localeCompare(b.f) || a.g.localeCompare(b.g))
+
+  const cuentasFilas = leer('bancos.csv')
+  const ultimaCuenta = new Map<string, string>()
+  for (const r of cuentasFilas) if (r.fecha > (ultimaCuenta.get(r.grupo) ?? '')) ultimaCuenta.set(r.grupo, r.fecha)
+  const cuentas: CuentaBanco[] = cuentasFilas
+    .filter((r) => ultimaCuenta.get(r.grupo) === r.fecha)
+    .map((r) => ({ g: r.grupo, f: r.fecha, seccion: r.seccion, empresa: r.empresa, banco: r.banco, cuenta: r.cuenta,
+      moneda: r.moneda, ars: num(r.importe_ars), original: num(r.importe_moneda) }))
+
+  const presentes = new Set(dias.map((d) => d.h))
   const rutaEstado = path.join(DATA, 'ultima_ingesta.json')
   cache = {
     demo,
-    monedaLocal: process.env.MONEDA_LOCAL || 'ARS',
-    hayTipoCambio: tcFilas.length > 0,
-    hoteles: [...hoteles].map(([id, nombre]) => ({ id, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    hoteles: HOTELES.filter((h) => presentes.has(h.id)),
+    grupos: GRUPOS.filter((g) => disponibles.some((d) => d.g === g.id)),
     dias,
-    procedencia: [...proc.values()],
+    forecast,
+    pickup,
+    flash,
+    bonvoy: [...bonvoyIdx.values()],
+    disponibles,
+    cuentas,
+    tipoCambio: tcF.length ? { fecha: tcF[tcF.length - 1], valor: tcV[tcV.length - 1] } : null,
     desde: dias[0]?.f ?? '',
     hasta: dias[dias.length - 1]?.f ?? '',
-    ingesta: existsSync(rutaEstado) ? JSON.parse(readFileSync(rutaEstado, 'utf-8')) : null,
+    ingesta: !demo && existsSync(rutaEstado) ? JSON.parse(readFileSync(rutaEstado, 'utf-8')) : null,
   }
   return cache
+}
+
+/** Datos que necesita cada pantalla (evita mandar todo al navegador). */
+export function datosTablero() {
+  const d = cargarDatos()
+  return { demo: d.demo, hoteles: d.hoteles, dias: d.dias, flash: d.flash, bonvoy: d.bonvoy, desde: d.desde, hasta: d.hasta }
 }

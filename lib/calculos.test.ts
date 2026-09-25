@@ -13,8 +13,8 @@ test('KPIs ponderados, no promedio de promedios', () => {
   assert.equal(a.occ, 75)
   assert.equal(a.adr, 25000 / 150)
   assert.equal(a.revpar, 25000 / 200)
-  const usd = agregar([dia('2026-01-01', 100, 50, 50000, 1000)], 'usd')
-  assert.equal(usd.ingHab, 50)
+  const ars = agregar([dia('2026-01-01', 100, 50, 50, 1000)], 'ars')
+  assert.equal(ars.ingHab, 50000)
 })
 
 test('fechas', () => {
@@ -35,7 +35,7 @@ test('proyección repite estacionalidad con tendencia cero', () => {
     const occ = mes.endsWith('-01') ? 90 : 50
     for (let d = 1; d <= 28; d++) dias.push(dia(`${mes}-${String(d).padStart(2, '0')}`, 100, occ, occ * 100))
   }
-  const hist = historicoMensual(dias, 'local')
+  const hist = historicoMensual(dias, 'usd')
   const s = estimarSupuestos(hist)
   assert.equal(s.tendenciaOcc, 0)
   const p = proyectar(hist, 12, [{ id: 'b', nombre: 'B', deltaOcc: 0, deltaAdr: 0, color: '' }], s)

@@ -1,38 +1,45 @@
-"""Actualiza data/tipo_cambio.csv (pesos por dólar) para ver los montos en USD.
+"""Arma data/tipo_cambio.csv: dólar Banco Nación vendedor (billete) por día.
 
-    python -m ingesta.tipo_cambio            # dólar oficial (vendedor)
-    python -m ingesta.tipo_cambio blue       # otras casas: blue, bolsa, contadoconliqui, mayorista
+    python -m ingesta.tipo_cambio
 
-Fuente: https://argentinadatos.com (histórico diario, sin clave).
+Fuente principal: https://argentinadatos.com (serie "oficial" = BNA vendedor).
+Respaldo: el "TP BNA Billete venta" que informa Numah en su planilla diaria de disponibilidades.
+Todo el tablero trabaja en dólares; este tipo de cambio solo se usa para ver los montos en pesos
+y para pasar a dólares los saldos en pesos de las disponibilidades.
 """
-import csv
 import json
 import sys
 import urllib.request
 
-from .almacen import DATA
+from . import almacen
 
-URL = "https://api.argentinadatos.com/v1/cotizaciones/dolares/{casa}"
+URL = "https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial"
 
 
-def main(casa: str = "oficial") -> int:
+def main() -> int:
+    serie: dict[str, float] = {}
     try:
-        with urllib.request.urlopen(URL.format(casa=casa), timeout=30) as r:
-            datos = json.load(r)
-    except Exception as e:  # sin cotización la app sigue funcionando en pesos
-        print(f"No se pudo actualizar el tipo de cambio: {e}")
-        return 0
-    filas = sorted(
-        {d["fecha"]: d["venta"] for d in datos if d.get("venta") and d["fecha"] >= "2018-01-01"}.items()
-    )
-    ruta = DATA / "tipo_cambio.csv"
-    with ruta.open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["fecha", "ars_por_usd"])
-        w.writerows(filas)
-    print(f"Tipo de cambio ({casa}): {len(filas)} días, último {filas[-1] if filas else '-'}")
+        with urllib.request.urlopen(URL, timeout=30) as r:
+            for d in json.load(r):
+                if d.get("venta") and d["fecha"] >= "2020-01-01":
+                    serie[d["fecha"]] = float(d["venta"])
+        print(f"BNA vendedor: {len(serie)} días desde argentinadatos.com")
+    except Exception as e:
+        print(f"No se pudo consultar argentinadatos.com ({e}); se usa el respaldo")
+
+    respaldo = 0
+    for fila in almacen.leer("disponibilidades"):
+        if fila["grupo"] == "numah" and fila["concepto"] == "Tipo de cambio USD" and fila["importe"]:
+            if fila["fecha"] not in serie and float(fila["importe"]) > 1:
+                serie[fila["fecha"]] = float(fila["importe"])
+                respaldo += 1
+    for fila in almacen.leer("tipo_cambio"):
+        serie.setdefault(fila["fecha"], float(fila["ars_por_usd"]))
+    almacen.escribir("tipo_cambio", almacen.TC_COLS,
+                     [{"fecha": f, "ars_por_usd": f"{v:.2f}"} for f, v in sorted(serie.items())])
+    print(f"tipo_cambio.csv: {len(serie)} días ({respaldo} tomados de la planilla de Numah)")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(*sys.argv[1:2]))
+    sys.exit(main())

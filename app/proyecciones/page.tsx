@@ -4,5 +4,6 @@ import { cargarDatos } from '@/lib/datos'
 export const metadata = { title: 'Proyecciones · Gestión Hotelera' }
 
 export default function Page() {
-  return <Proyecciones datos={cargarDatos()} />
+  const { demo, hoteles, dias } = cargarDatos()
+  return <Proyecciones datos={{ demo, hoteles, dias }} />
 }

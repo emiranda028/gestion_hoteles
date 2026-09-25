@@ -11,3 +11,6 @@ ingesta/pdfs/
 .vercel
 next-env.d.ts
 *.tsbuildinfo
+# Datos reales de los hoteles: NO se versionan mientras el repositorio sea público
+data/*
+!data/demo/

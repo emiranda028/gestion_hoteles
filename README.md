@@ -5,20 +5,37 @@ por un circuito automático que alimenta una web app propia.
 
 ```
 Gmail (agencialtelc@gmail.com)
-   │  PDF de cada hotel, todos los días
+   │  todos los días, por hotel: zip con PDFs de Opera + Excel de disponibilidades por grupo
    ▼
 GitHub Actions (3 veces por día) ── ingesta/ (Python)
-   │  lee el PDF, extrae indicadores, valida, guarda
+   │  F116 Manager Flash ........ conceptos día / mes / año
+   │  R106 History & Forecast ... un registro por día (historia y forecast) + foto del mes para el pick up
+   │  J146 Elite Arrivals ....... llegadas Bonvoy por nivel
+   │  Disponibilidades (xlsx) ... saldos de bancos, dólares, inversiones, cobros y pagos proyectados
    ▼
-data/diario.csv · data/procedencia.csv · data/hoteles.xlsx · data/tipo_cambio.csv
-   │  commit automático
+data/  hf.csv · flash.csv · pickup.csv · bonvoy.csv · disponibilidades.csv · bancos.csv · tipo_cambio.csv
+       hoteles.xlsx (mismas columnas que la base de Power BI)
    ▼
-Vercel redeploya la web app (Next.js)
-   ├── Tablero ........... ocupación, ADR, RevPAR, ingresos, procedencia, comparativo por hotel
-   ├── Proyecciones ...... estacionalidad + tendencia, escenarios pesimista / base / optimista
-   ├── Simulador ......... cuánto cobramos por operar un hotel y cuánto gana el propietario
-   └── Datos e ingesta ... última ejecución, errores de lectura, días faltantes, descargas
+Web app (Next.js)
+   ├── Tablero ............. Manager Flash del día + ocupación, ADR, RevPAR, ingresos, Bonvoy, comparativo
+   ├── Forecast y pick up .. on the books por mes, pick up diario y semanal, próximos 30/60/90 días
+   ├── Disponibilidades .... saldos por grupo (Panatel, Numah), evolución y detalle por cuenta
+   ├── Proyecciones ........ estacionalidad + tendencia, escenarios
+   ├── Simulador ........... cuánto cobramos por operar un hotel y cuánto gana el propietario
+   └── Datos ............... última ingesta, errores de lectura, días faltantes, descargas
 ```
+
+**Moneda:** todo se trabaja en dólares (los reportes de Opera vienen en USD). El botón "ARS (BNA)"
+convierte con el dólar Banco Nación vendedor de cada día. En disponibilidades, los saldos en pesos se
+pasan a dólares con ese mismo tipo de cambio y los dólares se toman por su monto original.
+
+**Hoteles:** Marriott Buenos Aires, Sheraton Mar del Plata y Sheraton Bariloche (grupo Panatel) y
+City Express Palermo (grupo Numah). Maitei Posadas queda en el histórico. Se configuran en
+`ingesta/config.yaml` (nombres tal como aparecen en Opera y en la base) y en `lib/datos.ts`.
+
+> **Datos confidenciales.** Mientras el repositorio sea público, la carpeta `data/` (salvo `data/demo/`)
+> no se sube y la app publicada muestra datos ficticios. La ingesta automática se niega a guardar datos
+> si el repositorio es público. Pasarlo a privado: GitHub → Settings → General → Change visibility.
 
 ## 1. Puesta en marcha
 
@@ -45,45 +62,30 @@ queda en rojo y GitHub manda un mail; el detalle aparece en la página **Datos e
    Opcional: `MONEDA_LOCAL` (por defecto `ARS`).
 3. Cada vez que la ingesta guarda datos nuevos, Vercel vuelve a publicar la app.
 
-## 2. Adaptar la lectura a los PDF reales
-
-Todo lo que depende del formato está en `ingesta/config.yaml`: los hoteles (con los textos que los
-identifican) y los patrones para encontrar cada dato. Para ver qué sale de un PDF:
+## 2. Cargar el histórico (una sola vez)
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r ingesta/requirements.txt
-.venv/bin/python -m ingesta.run inspeccionar reporte.pdf
+.venv/bin/python -m ingesta.run historico HF.xlsb          # base de Power BI: H&F, Flash, Pick up, Bonvoy, Disponibilidades
+.venv/bin/python -m ingesta.run carpeta ./25.09 --fecha 2026-09-25   # una carpeta de reportes (zip, pdf, xlsx)
+.venv/bin/python -m ingesta.tipo_cambio                    # dólar BNA vendedor
+git add -f data/ && git commit -m "Carga inicial de datos" && git push   # SOLO con el repositorio privado
 ```
 
-Muestra el texto extraído, el hotel, la fecha y cada campo reconocido. Si falta algo, se ajusta
-el patrón en `config.yaml` y se vuelve a probar. Si cada hotel usa un sistema distinto, se agrega
-una plantilla por formato.
+Para revisar qué se lee de un reporte: `.venv/bin/python -m ingesta.run inspeccionar "F116 25-09.pdf"`.
 
-Campos que se extraen por hotel y día: habitaciones disponibles, ocupadas y fuera de servicio,
-huéspedes, llegadas, salidas, ocupación, ADR, ingresos de habitaciones, de A&B, otros y totales,
-y la procedencia de los huéspedes por país. Los que falten se calculan cuando se puede (por ejemplo,
-los ingresos de habitaciones a partir de las noches vendidas y el ADR) y se controlan las
-incoherencias (ocupadas > disponibles, ADR informado distinto del calculado).
+## 3. Controles
 
-## 3. Cargar el histórico
-
-```bash
-# El Excel que hoy alimenta Power BI (reconoce las columnas por nombre)
-.venv/bin/python -m ingesta.run excel historico.xlsx --hoja "Hoja1"
-# Si el Excel es de un solo hotel:
-.venv/bin/python -m ingesta.run excel historico_hotel.xlsx --hotel hotel-demo-1
-
-# Una carpeta con PDFs viejos
-.venv/bin/python -m ingesta.run carpeta ./pdfs_2025
-```
-
-Después: commit y push de la carpeta `data/`.
+- La lectura se validó contra la base: el pick up coincide al centavo y el H&F coincide día por día
+  (las únicas diferencias eran días en que la base tenía una versión anterior del reporte).
+- Si llega un reporte de un hotel que no está configurado, un H&F en pesos, o un PDF que no se
+  puede leer, queda registrado en **Datos** y el job de GitHub queda en rojo (llega un mail).
+- Los PDF de auditoría y trial balance se ignoran (no alimentan tableros).
 
 ## 4. Power BI mientras conviven
 
-`data/hoteles.xlsx` se regenera en cada ingesta con las hojas *Diario* y *Procedencia*. Los
-tableros actuales pueden leerlo en lugar del Excel armado a mano (y también se descarga desde
-**Datos e ingesta**).
+`data/hoteles.xlsx` se regenera en cada ingesta con hojas H&F, Flash, Pick up, Bonvoy,
+Disponibilidades y Tipo de cambio, con las mismas columnas que la base actual.
 
 ## 5. Desarrollo
 
@@ -94,13 +96,15 @@ npm test           # cálculos de KPIs, proyecciones y simulador
 npm run build
 .venv/bin/python -m pytest -q ingesta   # lectura de PDFs
 .venv/bin/python -m ingesta.demo        # regenera los datos de demostración
+MUESTRAS_REALES=./reportes .venv/bin/python -m pytest ingesta   # prueba además con reportes reales locales
 ```
 
-Mientras `data/diario.csv` no tenga datos, la app muestra los de `data/demo/` con un aviso.
+Mientras no exista `data/hf.csv`, la app muestra los datos de `data/demo/` con un aviso.
 
 ### Estructura
-- `ingesta/` — descarga de Gmail (`gmail.py`), lectura de PDF (`parser.py`), guardado (`almacen.py`),
-  línea de comandos (`run.py`), tipo de cambio (`tipo_cambio.py`), configuración (`config.yaml`).
+- `ingesta/` — Gmail (`gmail.py`), reportes de Opera (`opera.py`), planilla de disponibilidades
+  (`disponibilidades.py`), clasificación y guardado (`procesar.py`, `almacen.py`), base histórica
+  (`historico.py`), tipo de cambio (`tipo_cambio.py`), línea de comandos (`run.py`), configuración (`config.yaml`).
 - `lib/` — cálculos: `kpi.ts`, `proyeccion.ts`, `simulador.ts`; carga de datos `datos.ts`.
-- `components/` — pantallas: `Tablero`, `Proyecciones`, `Simulador`.
+- `components/` — pantallas: `Tablero`, `FlashDelDia`, `Pickup`, `Disponibilidades`, `Proyecciones`, `Simulador`.
 - `app/` — rutas de Next.js.

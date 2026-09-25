@@ -10,10 +10,11 @@ export type Dia = {
   ingAyb: number
   ingOtros: number
   ingTot: number
-  tc: number | null // moneda local por USD en esa fecha
+  tc: number | null // pesos por dólar (BNA vendedor) en esa fecha
 }
 
-export type Moneda = 'local' | 'usd'
+// Los reportes vienen en dólares: 'usd' es la moneda base; 'ars' convierte con el BNA de cada día
+export type Moneda = 'usd' | 'ars'
 
 export type Agregado = {
   dias: number
@@ -33,13 +34,13 @@ export type Agregado = {
 const CAMPOS_DINERO = ['ingHab', 'ingAyb', 'ingOtros', 'ingTot'] as const
 
 export function convertir(d: Dia, moneda: Moneda): Dia {
-  if (moneda === 'local' || !d.tc) return d
+  if (moneda === 'usd' || !d.tc) return d
   const r = { ...d }
-  for (const c of CAMPOS_DINERO) r[c] = d[c] / d.tc
+  for (const c of CAMPOS_DINERO) r[c] = d[c] * d.tc
   return r
 }
 
-export function agregar(dias: Dia[], moneda: Moneda = 'local'): Agregado {
+export function agregar(dias: Dia[], moneda: Moneda = 'usd'): Agregado {
   const a = { dias: 0, disp: 0, ocup: 0, pax: 0, ingHab: 0, ingAyb: 0, ingOtros: 0, ingTot: 0 }
   const fechas = new Set<string>()
   for (const crudo of dias) {

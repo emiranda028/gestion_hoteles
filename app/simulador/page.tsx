@@ -9,9 +9,8 @@ function referencias(): Referencia[] {
   const d = cargarDatos()
   if (!d.hasta) return []
   const desde = sumarDias(d.hasta, -364)
-  const moneda = d.hayTipoCambio ? 'usd' : 'local'
   return [...agrupar(d.dias.filter((x) => x.f >= desde), (x) => x.h).entries()].map(([id, dias]) => {
-    const a = agregar(dias, moneda)
+    const a = agregar(dias, 'usd')
     const r = (n: number) => Math.round(n * 10) / 10
     return {
       id,
@@ -21,7 +20,7 @@ function referencias(): Referencia[] {
       adr: Math.round(a.adr),
       aybPct: a.ingHab ? r((100 * a.ingAyb) / a.ingHab) : 0,
       otrosPct: a.ingHab ? r((100 * a.ingOtros) / a.ingHab) : 0,
-      moneda: moneda === 'usd' ? 'USD' : 'ARS',
+      moneda: 'USD',
     }
   })
 }

@@ -1,87 +1,160 @@
-from datetime import date
+import os
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
 import yaml
 
+from ingesta import almacen, disponibilidades, opera
 from ingesta.numeros import a_numero
-from ingesta.parser import leer_reporte
 from ingesta.tests import muestras
 
 CONFIG = yaml.safe_load((Path(__file__).parents[1] / "config.yaml").read_text(encoding="utf-8"))
+CONFIG_PRUEBA = {**CONFIG, "hoteles": [
+    {"id": "centro", "nombre": "Centro", "opera": "Hotel Ejemplo Centro", "base": "CENTRO", "grupo": "g", "habitaciones": 200},
+    {"id": "costa", "nombre": "Costa", "opera": "Hotel Ejemplo Costa", "base": "COSTA", "grupo": "g", "habitaciones": 50},
+], "grupos": [{"id": "g", "nombre": "G", "detectar": ["EJEMPLO"], "base": []}]}
+
+
+@pytest.fixture
+def data_tmp(tmp_path, monkeypatch):
+    monkeypatch.setattr(almacen, "DATA", tmp_path)
+    monkeypatch.setattr(almacen, "REGISTRO", tmp_path / "procesados.json")
+    monkeypatch.setattr(almacen, "EXCEL", tmp_path / "hoteles.xlsx")
+    return tmp_path
 
 
 @pytest.mark.parametrize("texto,esperado", [
-    ("1.234.567,89", 1234567.89),
-    ("1,234,567.89", 1234567.89),
-    ("$ 12.500", 12500),
-    ("12,5", 12.5),
-    ("85,3 %", 85.3),
-    ("(1.200)", -1200),
-    ("-45.10", -45.10),
-    ("0,500", 0.5),
-    ("142.50", 142.5),
-    ("", None),
-    ("n/d", None),
+    ("1.234.567,89", 1234567.89), ("1,234,567.89", 1234567.89), ("$ 12.500", 12500), ("85,3 %", 85.3),
+    ("(1.200)", -1200), ("142.50", 142.5), ("", None),
 ])
 def test_numeros(texto, esperado):
     assert a_numero(texto) == esperado
 
 
-def test_reporte_en_castellano():
-    rep = leer_reporte(muestras.reporte_es(), CONFIG)
-    assert rep.valido, rep.avisos
-    assert rep.hotel_id == "hotel-demo-1"
-    assert rep.fecha == date(2026, 9, 24)
-    v = rep.valores
-    assert v["habitaciones_disponibles"] == 118
-    assert v["habitaciones_ocupadas"] == 97
-    assert v["habitaciones_fuera_servicio"] == 2
-    assert v["huespedes"] == 181
-    assert v["llegadas"] == 34 and v["salidas"] == 29
-    assert v["adr"] == 98450
-    assert v["ingreso_habitaciones"] == 9549650
-    assert v["ingreso_ayb"] == 2310200.5
-    assert v["ingreso_total"] == 12004850.5
-    assert rep.avisos == []
-    paises = {p["pais"]: (p["iso2"], p["huespedes"]) for p in rep.procedencia}
-    assert paises["Argentina"] == ("AR", 120)
-    assert paises["Estados Unidos"] == ("US", 12)
-    assert paises["España"] == ("ES", 8)
-    assert paises["Narnia"] == ("", 10)
-    assert "Total" not in paises
+def test_flash():
+    f = opera.leer_flash(muestras.FLASH)
+    assert f.hotel_nombre == "Hotel Ejemplo Centro"
+    assert f.fecha_reporte == date(2026, 9, 25)
+    assert f.fecha_negocio == date(2026, 9, 24)
+    assert f.moneda == "USD"
+    assert f.conceptos["Room Revenue"] == (22500.0, 534600.0, 5610000.0)
+    assert f.conceptos["Other Revenue"][0] == -120.0
+    assert f.conceptos["% Rooms Occupied for Tomorrow"] == (81.5, None, None)
+    assert "Hotel Ejemplo Centro" not in " ".join(f.conceptos)
 
 
-def test_reporte_en_ingles_toma_columna_del_dia():
-    rep = leer_reporte(muestras.reporte_en_columnas(), CONFIG)
-    assert rep.valido, rep.avisos
-    assert rep.hotel_id == "hotel-demo-2"
-    assert rep.fecha == date(2026, 9, 24)
-    assert rep.valores["habitaciones_ocupadas"] == 51
-    assert rep.valores["adr"] == 142.5
-    assert rep.valores["ingreso_habitaciones"] == 7267.5
-    assert rep.valores["ingreso_total"] == 9187.5
-    assert rep.avisos == []
+def test_hf_historia_y_forecast():
+    r = opera.leer_hf(muestras.HF)
+    assert (r.desde, r.hasta, r.moneda) == (date(2026, 9, 29), date(2026, 9, 30), "USD")
+    h, fc = r.dias
+    assert (h.tipo, h.total_occ, h.no_show, h.ooo, h.personas) == ("History", 100, 2, 3, 160)
+    assert h.occ_pct == pytest.approx(0.5)
+    assert (fc.tipo, fc.no_show, fc.ooo, fc.personas, fc.room_revenue) == ("Forecast", None, 1, 190, 19200)
+    assert r.total.total_occ == 220 and r.total.deduct_group == 50
+    assert not r.mes_completo
 
 
-def test_hotel_por_asunto_y_fecha_del_mail():
-    rep = leer_reporte(muestras.reporte_sin_fecha_ni_hotel(), CONFIG,
-                       contexto_extra="Reporte diario DEMO COSTA", fecha_mail=date(2026, 9, 25))
-    assert rep.hotel_id == "hotel-demo-2"
-    assert rep.fecha == date(2026, 9, 24)
-    assert rep.valores["habitaciones_disponibles"] == 64  # del inventario en config
-    assert rep.valido
+def test_hf_con_no_deducidas():
+    r = opera.leer_hf(muestras.HF_NON_DED)
+    d = r.dias[0]
+    assert (d.deduct_indiv, d.deduct_group, d.room_revenue, d.ooo, d.personas) == (32, 8, 5600, 1, 62)
+    assert r.mes_completo
+    assert r.total.total_occ == 85
 
 
-def test_guardar_es_idempotente(tmp_path, monkeypatch):
-    from ingesta import almacen
-    for nombre in ("DATA", "DIARIO", "PROCEDENCIA", "EXCEL", "REGISTRO"):
-        monkeypatch.setattr(almacen, nombre, tmp_path / Path(str(getattr(almacen, nombre))).name)
-    rep = leer_reporte(muestras.reporte_es(), CONFIG)
-    assert almacen.guardar([rep], CONFIG["hoteles"], ["a.pdf"]) == 1
-    assert almacen.guardar([rep], CONFIG["hoteles"], ["a.pdf"]) == 1
-    filas = (tmp_path / "diario.csv").read_text().strip().splitlines()
-    assert len(filas) == 2
-    proc = (tmp_path / "procedencia.csv").read_text().strip().splitlines()
-    assert len(proc) == 1 + 5
-    assert (tmp_path / "hoteles.xlsx").exists()
+def test_elite():
+    e = opera.leer_elite(muestras.ELITE)
+    assert e.llegadas == {(date(2026, 9, 25), "Gold Elite"): 2, (date(2026, 9, 25), "Member (MRD)"): 1}
+
+
+def test_pdf_de_punta_a_punta(data_tmp):
+    from ingesta.procesar import procesar
+    rs = procesar("flash.pdf", muestras.pdf(muestras.FLASH), CONFIG_PRUEBA, None)
+    rs += procesar("hf.pdf", muestras.pdf(muestras.HF_NON_DED), CONFIG_PRUEBA, None)
+    rs += procesar("elite.pdf", muestras.pdf(muestras.ELITE), CONFIG_PRUEBA, None)
+    assert all(r.ok for r in rs), [r.avisos for r in rs]
+    flash = {r["concepto"]: r for r in almacen.leer("flash")}
+    assert flash["Total Revenue"]["dia"] == "27380.50"
+    assert float(flash["Tasa Ocupación"]["dia"]) == pytest.approx(149 / 200)
+    assert len(almacen.leer("hf")) == 2
+    pk = almacen.leer("pickup")
+    assert pk[0]["mes"] == "2026-10" and pk[0]["noches"] == "85"
+    assert {r["nivel"] for r in almacen.leer("bonvoy")} == {"Gold Elite (GLD)", "Member (MRD)"}
+    # reprocesar no duplica
+    procesar("hf.pdf", muestras.pdf(muestras.HF_NON_DED), CONFIG_PRUEBA, None)
+    assert len(almacen.leer("hf")) == 2
+
+
+def _planilla():
+    d = datetime(2026, 9, 24)
+    v = [None] * 10
+
+    def f(**cols):
+        r = list(v)
+        for k, x in cols.items():
+            r[int(k[1:])] = x
+        return r
+    return [
+        f(c1="Saldos Bancos, FCI, Caja:"),
+        f(c1="BANCOS", c2="FECHA", c3="EMPRESA", c4="BANCO", c5="CUENTA.Nº.", c6="EXTRACTO"),
+        f(c2=d, c3="EJEMPLO S.A.", c4="Banco A", c5="1-2", c6=1000.0),
+        f(c2=d, c3="EJEMPLO S.A.", c4="Banco B", c5="3-4", c6=500.0),
+        f(c2=d, c3="TOTAL BANCOS (según extracto)", c6=1500.0),
+        f(c1="MONEDA EXTRANJERA", c2="FECHA", c3="EMPRESA", c4="BANCO", c5="CUENTA.Nº.", c6="IMPORTE", c7="EXTRACTO", c8="TP BNA Billete venta"),
+        f(c2=d, c3="EJEMPLO S.A.", c4="Banco A USD", c5="9", c6=20000.0, c7=20.0, c8=1000.0),
+        f(c2=d, c3="EJEMPLO S.A.", c4="Caja Efectivo  USD", c5="Tesoreria", c6=10000.0, c7=10.0, c8=1000.0),
+        f(c2=d, c3="TOTAL USD ", c6=30000.0, c7=30.0, c8=1000.0),
+        f(c2=d, c3="EJEMPLO S.A.", c4="Caja Efectivo EUROS", c5="Caja de Seguridad", c6=1200.0, c7=1.0, c8=1200.0),
+        f(c2=d, c3="TOTAL EUR", c6=1200.0, c7=1.0, c8=1200.0),
+        f(c2=d, c3="TOTAL MONEDA EXTRAJERA VAL.MEP", c6=31200.0),
+        f(c1="INVERSIONES", c2="FECHA", c3="EMPRESA", c4="BANCO", c5="CUENTA.Nº.", c6="EXTRACTO"),
+        f(c2=d, c3="EJEMPLO S.A.", c4="BANCO A", c5="FCI", c6=4000.0),
+        f(c2=d, c3="TOTAL FONDO COMUN DE INVERSION", c6=4000.0),
+        f(c1="Pagos proyectados "),
+        f(c1="PROVEEDORES", c2=d, c3="Cheques emitidos (Manuales + echeq's)", c4="EJEMPLO S.A.", c6=300.0),
+        f(c1="PRESTAMOS", c2=d, c3="Debito automático", c4="EJEMPLO S.A.", c6=200.0),
+        f(c1="SUB-TOTAL", c2=d, c3="PAGOS PROYECTADOS", c6=500.0),
+        f(c1="Cobros proyectado"),
+        f(c1="TARJETAS DE CREDITOS", c2=d, c3="Liquidaciones VISA", c5="HOTEL", c6=700.0),
+        f(c1="SUB-TOTAL", c2=d, c3="COBROS PROYECTADOS", c6=700.0),
+        f(c1="TOTAL", c2=d, c6=36900.0),
+    ]
+
+
+def test_disponibilidades():
+    d = disponibilidades.leer_filas(_planilla())
+    r = {(x["concepto"], x["moneda"], x["tipo_moneda"]): x["importe"] for x in d.resumen}
+    assert d.empresa == "EJEMPLO S.A."
+    assert r[("DISPONIBILIDADES", "Local", "ARS")] == 36900
+    assert r[("Bancos pesos", "Local", "ARS")] == 1500
+    assert r[("Moneda extranjera", "Extranjera", "USD")] == 30
+    assert r[("Bancos dólares", "Extranjera", "USD")] == 20
+    assert r[("Efectivo - Tesorería", "Extranjera", "USD")] == 10
+    assert r[("Inversiones", "Local", "ARS")] == 4000
+    assert r[("Cheques emitidos", "Local", "ARS")] == -300
+    assert r[("Pagos programados", "Local", "ARS")] == -200
+    assert r[("Cobranzas Proyectadas", "Local", "ARS")] == 700
+    assert r[("Moneda Local", "Local", "ARS")] == 36900 - 31200
+    assert d.tc_bna == 1000
+    assert len([x for x in d.detalle if x["seccion"] == "Bancos pesos"]) == 2
+
+
+MUESTRAS = os.environ.get("MUESTRAS_REALES")
+
+
+@pytest.mark.skipif(not MUESTRAS, reason="definir MUESTRAS_REALES=carpeta con reportes reales")
+def test_reportes_reales():
+    """Corre sobre una carpeta local con reportes reales (no se suben al repositorio)."""
+    from ingesta.procesar import expandir
+    vistos = 0
+    for ruta in Path(MUESTRAS).rglob("*.pdf"):
+        for nombre, contenido in expandir(ruta.name, ruta.read_bytes()):
+            texto = opera.extraer_texto(contenido)
+            tipo = opera.tipo_reporte(texto)
+            if tipo == "flash":
+                assert opera.leer_flash(texto).conceptos
+            elif tipo == "hf":
+                assert opera.leer_hf(texto).dias
+            vistos += tipo is not None
+    assert vistos

@@ -29,10 +29,7 @@ jobs:
 
       - run: pip install -r ingesta/requirements.txt
 
-      - name: Tipo de cambio
-        run: python -m ingesta.tipo_cambio
-
-      - name: Leer PDFs de Gmail
+      - name: Leer reportes de Gmail
         id: gmail
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
@@ -40,11 +37,21 @@ jobs:
         run: python -m ingesta.run gmail
         continue-on-error: true
 
+      - name: Tipo de cambio BNA
+        run: python -m ingesta.tipo_cambio
+
+      # Los datos de los hoteles (facturación, saldos bancarios) solo se guardan si el repositorio es privado
       - name: Guardar datos
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "$(gh api repos/${{ github.repository }} --jq .private)" != "true" ]; then
+            echo "::error::El repositorio es público: no se suben datos reales. Hacerlo privado en Settings > General."
+            exit 1
+          fi
+          git add -f data/
           git config user.name "ingesta-automatica"
           git config user.email "ingesta@users.noreply.github.com"
-          git add data/
           if git diff --cached --quiet; then
             echo "Sin cambios"
           else

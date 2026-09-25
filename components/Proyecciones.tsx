@@ -1,11 +1,13 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { Datos } from '@/lib/datos'
-import type { Moneda } from '@/lib/kpi'
+import type { Hotel } from '@/lib/datos'
+import type { Dia } from '@/lib/kpi'
 import { dinero, entero, mesCorto, pct } from '@/lib/formato'
 import { ESCENARIOS_BASE, type Escenario, estimarSupuestos, historicoMensual, proyectar } from '@/lib/proyeccion'
 import { AvisoDemo, Campo, Segmentado, Selector, Tarjeta } from './ui'
+
+type Datos = { demo: boolean; hoteles: Hotel[]; dias: Dia[] }
 
 type Metrica = 'occ' | 'adr' | 'revpar' | 'ingTot'
 const METRICAS: { valor: Metrica; texto: string }[] = [
@@ -17,12 +19,12 @@ const METRICAS: { valor: Metrica; texto: string }[] = [
 
 export default function Proyecciones({ datos }: { datos: Datos }) {
   const [hotel, setHotel] = useState(datos.hoteles[0]?.id ?? '')
-  const [moneda, setMoneda] = useState<Moneda>(datos.hayTipoCambio ? 'usd' : 'local')
+  const moneda = 'usd' as const
   const [horizonte, setHorizonte] = useState('12')
   const [metrica, setMetrica] = useState<Metrica>('occ')
   const [escenarios, setEscenarios] = useState<Escenario[]>(ESCENARIOS_BASE)
   const [ajustes, setAjustes] = useState<{ tendenciaOcc?: number; crecimientoAdr?: number }>({})
-  const cod = moneda === 'usd' ? 'USD' : 'ARS'
+  const cod = 'USD'
 
   const hist = useMemo(
     () => historicoMensual(datos.dias.filter((d) => hotel === 'todos' || d.h === hotel), moneda),
@@ -84,10 +86,6 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
             opciones={[...datos.hoteles.map((h) => ({ valor: h.id, texto: h.nombre })), { valor: 'todos', texto: 'Cartera completa' }]} />
           <Selector etiqueta="Horizonte" valor={horizonte} onChange={setHorizonte}
             opciones={['3', '6', '12', '18', '24'].map((m) => ({ valor: m, texto: `${m} meses` }))} />
-          {datos.hayTipoCambio && (
-            <Segmentado valor={moneda} onChange={(v) => { setMoneda(v); setAjustes({}) }}
-              opciones={[{ valor: 'usd', texto: 'USD' }, { valor: 'local', texto: datos.monedaLocal }]} />
-          )}
         </div>
       </div>
 

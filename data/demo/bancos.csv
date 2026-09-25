@@ -1,0 +1,7 @@
+grupo,fecha,seccion,empresa,banco,cuenta,moneda,importe_ars,importe_moneda
+demo,2026-09-25,Bancos pesos,HOTELES DEMO S.A.,Banco A,,ARS,80000000.0,80000000.0
+demo,2026-09-25,Bancos pesos,HOTELES DEMO S.A.,Banco B,,ARS,45000000.0,45000000.0
+demo,2026-09-25,Moneda extranjera,HOTELES DEMO S.A.,Banco A USD,,USD,1098476027.3417804,650000.0
+demo,2026-09-25,Inversiones,HOTELES DEMO S.A.,FCI Money Market,,ARS,420000000.0,420000000.0
+demo,2026-09-25,Pagos proyectados,HOTELES DEMO S.A.,Proveedores,,ARS,-50000000.0,-50000000.0
+demo,2026-09-25,Cobros proyectados,HOTELES DEMO S.A.,Tarjetas de crédito,,ARS,25000000.0,25000000.0

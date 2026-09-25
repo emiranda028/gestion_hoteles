@@ -4,8 +4,11 @@ import path from 'node:path'
 // Descarga de los datos consolidados. Power BI puede conectarse a estas URLs
 // (Obtener datos > Web) mientras conviva con la web app.
 const ARCHIVOS: Record<string, string> = {
-  'diario.csv': 'text/csv; charset=utf-8',
-  'procedencia.csv': 'text/csv; charset=utf-8',
+  'hf.csv': 'text/csv; charset=utf-8',
+  'flash.csv': 'text/csv; charset=utf-8',
+  'pickup.csv': 'text/csv; charset=utf-8',
+  'disponibilidades.csv': 'text/csv; charset=utf-8',
+  'tipo_cambio.csv': 'text/csv; charset=utf-8',
   'hoteles.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 

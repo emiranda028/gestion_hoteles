@@ -27,7 +27,8 @@ export default function Page() {
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Datos e ingesta automática</h1>
         <p className="text-sm text-slate-500">
-          Todos los días se leen los PDF que llegan al correo, se extraen los indicadores y se actualiza esta app.
+          Todos los días se leen los reportes de Opera (Manager Flash, History &amp; Forecast, Elite Arrivals) y las
+          planillas de disponibilidades que llegan al correo, y se actualiza esta app.
         </p>
       </div>
 
@@ -49,7 +50,7 @@ export default function Page() {
                 <ul className="mt-3 space-y-2 text-sm">
                   {conAvisos.map((a, i) => (
                     <li key={i} className={`rounded-md p-2 ${a.ok ? 'bg-amber-50' : 'bg-red-50'}`}>
-                      <div className="font-medium">{a.ok ? 'Con avisos' : 'Error'}: {a.origen}</div>
+                      <div className="font-medium">{a.ok ? 'Con avisos' : 'Error'}: {a.tipo} · {a.origen}</div>
                       <ul className="ml-4 list-disc text-xs text-slate-600">
                         {a.avisos.map((t, j) => <li key={j}>{t}</li>)}
                       </ul>
@@ -69,9 +70,12 @@ export default function Page() {
             <p className="text-sm text-slate-500">Disponibles cuando haya datos reales.</p>
           ) : (
             <ul className="space-y-1 text-sm">
-              <li><a className="text-marca underline" href="/api/descargar/hoteles.xlsx">hoteles.xlsx</a> — Excel consolidado (hojas Diario y Procedencia)</li>
-              <li><a className="text-marca underline" href="/api/descargar/diario.csv">diario.csv</a> — un registro por hotel y día</li>
-              <li><a className="text-marca underline" href="/api/descargar/procedencia.csv">procedencia.csv</a> — huéspedes por país</li>
+              <li><a className="text-marca underline" href="/api/descargar/hoteles.xlsx">hoteles.xlsx</a> — Excel con el formato de la base de Power BI (H&amp;F, Flash, Pick up, Bonvoy, Disponibilidades)</li>
+              <li><a className="text-marca underline" href="/api/descargar/hf.csv">hf.csv</a> — History &amp; Forecast por hotel y día</li>
+              <li><a className="text-marca underline" href="/api/descargar/flash.csv">flash.csv</a> — Manager Flash</li>
+              <li><a className="text-marca underline" href="/api/descargar/pickup.csv">pickup.csv</a> — fotos diarias del on the books</li>
+              <li><a className="text-marca underline" href="/api/descargar/disponibilidades.csv">disponibilidades.csv</a> — saldos por grupo</li>
+              <li><a className="text-marca underline" href="/api/descargar/tipo_cambio.csv">tipo_cambio.csv</a> — dólar BNA vendedor</li>
             </ul>
           )}
           <p className="mt-3 text-xs text-slate-500">

@@ -10,6 +10,9 @@ from email.header import decode_header, make_header
 from email.utils import parsedate_to_datetime
 
 
+EXTENSIONES = (".pdf", ".zip", ".xlsx", ".xlsm")
+
+
 @dataclass
 class Adjunto:
     uid: str
@@ -39,8 +42,8 @@ class Gmail:
         self.imap.login(usuario, clave.replace(" ", ""))
         self.imap.select(f'"{conf.get("carpeta", "INBOX")}"')
 
-    def adjuntos_pdf(self):
-        """Itera los PDF adjuntos de los mails que cumplen la búsqueda configurada."""
+    def adjuntos(self):
+        """Itera los adjuntos PDF, ZIP y Excel de los mails que cumplen la búsqueda configurada."""
         estado, datos = self.imap.uid("SEARCH", "X-GM-RAW", f'"{self.conf["busqueda"]}"')
         if estado != "OK":
             raise RuntimeError(f"Búsqueda IMAP fallida: {datos}")
@@ -55,8 +58,7 @@ class Gmail:
                 fecha = None
             for parte in msg.walk():
                 nombre = _decodificar(parte.get_filename())
-                es_pdf = parte.get_content_type() == "application/pdf" or nombre.lower().endswith(".pdf")
-                if not es_pdf:
+                if not nombre.lower().endswith(EXTENSIONES) and parte.get_content_type() != "application/pdf":
                     continue
                 contenido = parte.get_payload(decode=True)
                 if not contenido:
@@ -67,7 +69,7 @@ class Gmail:
                     fecha_mail=fecha,
                     remitente=_decodificar(msg.get("From")),
                     asunto=_decodificar(msg.get("Subject")),
-                    archivo=nombre or "adjunto.pdf",
+                    archivo=nombre if nombre.lower().endswith(EXTENSIONES) else f"{nombre or 'adjunto'}.pdf",
                     contenido=contenido,
                 )
 
