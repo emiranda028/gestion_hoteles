@@ -18,6 +18,12 @@ export type FlashHotel = {
   c: Record<string, [number | null, number | null, number | null]>
   anterior: Record<string, [number | null, number | null, number | null]> | null // mismo día del año anterior
 }
+// Valores del día del Manager Flash (para el resumen ejecutivo)
+export type FlashDia = {
+  h: string; f: string // fecha de negocio
+  r: string // fecha del informe (día en que llega)
+  hab: number; ocup: number; pax: number; adr: number; rev: number; ayb: number; otros: number; tot: number
+}
 export type BonvoyMes = { mes: string; h: string; nivel: string; n: number }
 export type PaisMes = { mes: string; h: string; pais: string; continente: string; n: number }
 // Disponibilidades tal cual las informa cada grupo: pesos en pesos, dólares y euros en su moneda,
@@ -56,6 +62,7 @@ export type Datos = {
   forecast: DiaForecast[]
   pickup: FotoPickup[]
   flash: FlashHotel[]
+  flashDias: FlashDia[]
   bonvoy: BonvoyMes[]
   paises: PaisMes[]
   disponibles: Disponible[]
@@ -169,6 +176,27 @@ export function cargarDatos(): Datos {
     h, fecha, c: flashIdx.get(`${h}|${fecha}`)!, anterior: flashIdx.get(`${h}|${anioAntes(fecha)}`) ?? null,
   }))
 
+  // --- valores del día de cada flash (últimos 400 días)
+  const fechasReporte = new Map<string, string>()
+  for (const r of leer('flash.csv')) if (r.fecha_reporte) fechasReporte.set(`${r.hotel}|${r.fecha}`, r.fecha_reporte)
+  const ultimoFlashGlobal = [...ultimoFlash.values()].reduce((m, f) => (f > m ? f : m), '')
+  const corteFlash = ultimoFlashGlobal ? new Date(new Date(ultimoFlashGlobal).getTime() - 400 * 864e5).toISOString().slice(0, 10) : ''
+  const flashDias: FlashDia[] = []
+  for (const [k, c] of flashIdx) {
+    const [h, f] = k.split('|')
+    if (f < corteFlash) continue
+    const v = (n: string) => c[n]?.[0] ?? 0
+    const siguiente = new Date(new Date(f).getTime() + 864e5).toISOString().slice(0, 10)
+    flashDias.push({
+      h, f, r: fechasReporte.get(k) || siguiente,
+      hab: v('Total Rooms in Hotel'), ocup: c['Rooms Occupied minus House Use']?.[0] ?? v('Rooms Occupied'),
+      pax: v('Total In-House Persons'), adr: 0, rev: v('Room Revenue'), ayb: v('Food And Beverage Revenue'),
+      otros: v('Other Revenue'), tot: c['Total Revenue']?.[0] ?? v('Ventas Totales'),
+    })
+    const x = flashDias[flashDias.length - 1]
+    x.adr = x.ocup ? x.rev / x.ocup : v('ADR') // como en Power BI: ingresos de habitaciones / habitaciones vendidas
+  }
+
   const pickup: FotoPickup[] = leer('pickup.csv').map((r) => ({
     r: r.fecha_reporte, h: r.hotel, mes: r.mes, noches: num(r.noches), grp: num(r.grupo), rev: num(r.revenue),
     occ: num(r.occ_pct),
@@ -227,6 +255,7 @@ export function cargarDatos(): Datos {
     forecast,
     pickup,
     flash,
+    flashDias,
     bonvoy: [...bonvoyIdx.values()],
     paises: leer('paises.csv').map((r) => ({ mes: r.mes, h: r.hotel, pais: r.pais, continente: r.continente, n: num(r.huespedes) })),
     disponibles,

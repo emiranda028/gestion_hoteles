@@ -17,6 +17,7 @@ data/  hf.csv · flash.csv · pickup.csv · bonvoy.csv · disponibilidades.csv �
        hoteles.xlsx (mismas columnas que la base de Power BI)
    ▼
 Web app (Next.js)
+   ├── Resumen ............. resumen ejecutivo comparado por grupo (como la primera hoja de Power BI)
    ├── Tablero ............. Manager Flash del día + ocupación, ADR, RevPAR, ingresos, Bonvoy, países, comparativo
    ├── Forecast y pick up .. on the books por mes, pick up diario y semanal, próximos 30/60/90 días
    ├── Disponibilidades .... saldos por grupo (Panatel, Numah) tal como los informan, evolución y detalle

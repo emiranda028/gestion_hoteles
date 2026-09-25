@@ -51,15 +51,16 @@ def main(desde=date(2024, 1, 1), hoy=date(2026, 9, 25)):
                        "personas": round(ocup * 1.7), "fecha_reporte": hoy})
             if historia:
                 ayb, otros = rev * rnd.uniform(0.2, 0.3), rev * 0.03
-                a = acum.setdefault((hid, d.year, d.month), [0, 0, 0, 0, 0])
-                y = acum.setdefault((hid, d.year), [0, 0, 0, 0, 0])
+                a = acum.setdefault((hid, d.year, d.month), [0, 0, 0, 0, 0, 0])
+                y = acum.setdefault((hid, d.year), [0, 0, 0, 0, 0, 0])
                 for t in (a, y):
-                    for i, v in enumerate((hab, ocup, rev, rev + ayb + otros, ayb)):
+                    for i, v in enumerate((hab, ocup, rev, rev + ayb + otros, ayb, round(ocup * 1.7))):
                         t[i] += v
                 if d >= hoy - timedelta(days=400):
                     for concepto, i, dia in (("Total Rooms in Hotel", 0, hab), ("Rooms Occupied minus House Use", 1, ocup),
                                              ("Room Revenue", 2, rev), ("Total Revenue", 3, rev + ayb + otros),
-                                             ("Food And Beverage Revenue", 4, ayb)):
+                                             ("Food And Beverage Revenue", 4, ayb),
+                                             ("Total In-House Persons", 5, round(ocup * 1.7))):
                         flash.append({"hotel": hid, "fecha": d, "fecha_reporte": d + timedelta(days=1),
                                       "concepto": concepto, "dia": round(dia, 2), "mes": round(a[i], 2), "anio": round(y[i], 2)})
                     flash.append({"hotel": hid, "fecha": d, "fecha_reporte": d + timedelta(days=1),
