@@ -1,9 +1,9 @@
 import Proyecciones from '@/components/Proyecciones'
-import { cargarDatos } from '@/lib/datos'
+import { datosDelUsuario } from '@/lib/acceso'
 
 export const metadata = { title: 'Proyecciones · Gestión Hotelera' }
 
-export default function Page() {
-  const { demo, hoteles, dias } = cargarDatos()
+export default async function Page() {
+  const { demo, hoteles, dias } = await datosDelUsuario()
   return <Proyecciones datos={{ demo, hoteles, dias }} />
 }

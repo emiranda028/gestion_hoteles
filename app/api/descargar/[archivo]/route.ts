@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { DATA } from '@/lib/datos'
 
 // Descarga de los datos consolidados. Power BI puede conectarse a estas URLs
 // (Obtener datos > Web) mientras conviva con la web app.
@@ -13,14 +14,10 @@ const ARCHIVOS: Record<string, string> = {
   'hoteles.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 
-export function generateStaticParams() {
-  return Object.keys(ARCHIVOS).map((archivo) => ({ archivo }))
-}
-
 export async function GET(_req: Request, { params }: { params: Promise<{ archivo: string }> }) {
   const { archivo } = await params
   const tipo = ARCHIVOS[archivo]
-  const ruta = path.join(process.cwd(), 'data', archivo)
+  const ruta = path.join(DATA, archivo)
   if (!tipo || !existsSync(ruta)) return new Response('No encontrado', { status: 404 })
   return new Response(readFileSync(ruta), {
     headers: { 'Content-Type': tipo, 'Content-Disposition': `attachment; filename="${archivo}"` },

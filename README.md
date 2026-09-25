@@ -44,39 +44,17 @@ City Express Palermo (grupo Numah). Maitei Posadas ya no pertenece al grupo: sus
 histórico y no suman en "Todos los hoteles". Se configuran en
 `ingesta/config.yaml` (nombres tal como aparecen en Opera y en la base) y en `lib/datos.ts`.
 
-> **Datos confidenciales.** Mientras el repositorio sea público, la carpeta `data/` (salvo `data/demo/`)
-> no se sube y la app publicada muestra datos ficticios. La ingesta automática se niega a guardar datos
-> si el repositorio es público. Pasarlo a privado: GitHub → Settings → General → Change visibility.
+> **Datos confidenciales.** Los datos reales viven solo en el servidor (carpeta `DATA_DIR`) y nunca
+> se suben a GitHub; el repositorio lleva solo el código y datos ficticios de demostración (`data/demo/`).
 
 ## 1. Puesta en marcha
 
-### Gmail
-1. En la cuenta `agencialtelc@gmail.com` activar la verificación en dos pasos.
-2. Crear una **contraseña de aplicación** (Cuenta de Google → Seguridad → Contraseñas de aplicaciones).
-3. Verificar que IMAP esté habilitado (Gmail → Configuración → Reenvío y correo POP/IMAP).
+La app se instala en un VPS de Hostinger: ver **[deploy/HOSTINGER.md](deploy/HOSTINGER.md)**
+(Gmail, servidor, datos iniciales, dominio, HTTPS y usuarios). La ingesta corre cada hora en el
+servidor y la web app muestra los datos nuevos sin reiniciarse.
 
-### GitHub
-En el repositorio: *Settings → Secrets and variables → Actions → New repository secret*:
-
-| Secreto | Valor |
-|---|---|
-| `GMAIL_USER` | `agencialtelc@gmail.com` |
-| `GMAIL_APP_PASSWORD` | la contraseña de aplicación de 16 letras |
-
-Para la planilla de países: compartirla en Drive como "cualquier persona con el enlace" y crear la
-variable del repositorio `PAISES_URL` (*Settings → Secrets and variables → Actions → Variables*) con
-`https://docs.google.com/spreadsheets/d/ID/export?format=xlsx` si es una hoja de Google, o
-`https://drive.google.com/uc?export=download&id=ID` si es un .xlsx subido a Drive.
-
-La ingesta corre sola a las 9:15, 12:15 y 18:15 (hora argentina). También se puede lanzar a mano
-desde *Actions → Ingesta diaria de reportes → Run workflow*. Si un PDF no se puede leer, el job
-queda en rojo y GitHub manda un mail; el detalle aparece en la página **Datos e ingesta**.
-
-### Vercel (hosting de la web app)
-1. Importar el repositorio en vercel.com (detecta Next.js solo).
-2. Variables de entorno: `APP_USUARIO` y `APP_PASSWORD` para pedir usuario y contraseña al entrar.
-   Opcional: `MONEDA_LOCAL` (por defecto `ARS`).
-3. Cada vez que la ingesta guarda datos nuevos, Vercel vuelve a publicar la app.
+**Acceso:** usuario y contraseña. Los administradores de LTELC crean los usuarios desde
+**Usuarios** y asignan a cada cliente los grupos de hoteles que puede ver.
 
 ## 2. Cargar el histórico (una sola vez)
 
@@ -85,7 +63,6 @@ python -m venv .venv && .venv/bin/pip install -r ingesta/requirements.txt
 .venv/bin/python -m ingesta.run historico HF.xlsb          # base de Power BI: H&F, Flash, Pick up, Bonvoy, Disponibilidades
 .venv/bin/python -m ingesta.run carpeta ./25.09 --fecha 2026-09-25   # una carpeta de reportes (zip, pdf, xlsx)
 .venv/bin/python -m ingesta.tipo_cambio                    # dólar BNA vendedor
-git add -f data/ && git commit -m "Carga inicial de datos" && git push   # SOLO con el repositorio privado
 ```
 
 Para revisar qué se lee de un reporte: `.venv/bin/python -m ingesta.run inspeccionar "F116 25-09.pdf"`.

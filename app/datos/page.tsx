@@ -1,10 +1,12 @@
 import { cargarDatos } from '@/lib/datos'
+import { requerirAdmin } from '@/lib/usuarios'
 import { agrupar, sumarDias } from '@/lib/kpi'
 import { fechaLarga } from '@/lib/formato'
 
 export const metadata = { title: 'Datos e ingesta · Gestión Hotelera' }
 
-export default function Page() {
+export default async function Page() {
+  await requerirAdmin()
   const d = cargarDatos()
   const hace30 = sumarDias(d.hasta, -29)
   const cobertura = [...agrupar(d.dias, (x) => x.h).entries()].map(([id, dias]) => {

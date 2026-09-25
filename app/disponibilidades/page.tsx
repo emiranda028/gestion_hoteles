@@ -1,9 +1,9 @@
 import Disponibilidades from '@/components/Disponibilidades'
-import { cargarDatos } from '@/lib/datos'
+import { datosDelUsuario } from '@/lib/acceso'
 
 export const metadata = { title: 'Disponibilidades · Gestión Hotelera' }
 
-export default function Page() {
-  const { demo, grupos, disponibles, cuentas } = cargarDatos()
+export default async function Page() {
+  const { demo, grupos, disponibles, cuentas } = await datosDelUsuario()
   return <Disponibilidades demo={demo} grupos={grupos} disponibles={disponibles} cuentas={cuentas} />
 }

@@ -14,11 +14,13 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-DATA = RAIZ / "data"
+# En el servidor los datos viven fuera del código (variable DATA_DIR); si no, en ./data
+DATA = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else RAIZ / "data"
 REGISTRO = DATA / "procesados.json"
 EXCEL = DATA / "hoteles.xlsx"
 

@@ -9,7 +9,7 @@ import math
 import random
 from datetime import date, timedelta
 
-from .almacen import BANCOS_COLS, DATA, DISP_COLS, FLASH_COLS, HF_COLS, PICKUP_COLS
+from .almacen import BANCOS_COLS, RAIZ, DISP_COLS, FLASH_COLS, HF_COLS, PICKUP_COLS
 
 HOTELES = [
     # id, habitaciones, ADR base USD, estacionalidad mensual
@@ -26,7 +26,7 @@ def tc(d: date) -> float:
 
 def main(desde=date(2024, 1, 1), hoy=date(2026, 9, 25)):
     rnd = random.Random(7)
-    out = DATA / "demo"
+    out = RAIZ / "data" / "demo"
     out.mkdir(parents=True, exist_ok=True)
     hf, flash, pickup, bonvoy, disp, bancos, tcs = [], [], [], [], [], [], []
     fin_forecast = date(hoy.year + (hoy.month > 9), (hoy.month + 2) % 12 + 1, 1) - timedelta(days=1)

@@ -1,5 +1,5 @@
 import 'server-only'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { parseCsv } from './csv.ts'
 import type { Dia } from './kpi.ts'
@@ -83,7 +83,19 @@ export type Datos = {
   ingesta: EstadoIngesta
 }
 
-const DATA = path.join(process.cwd(), 'data')
+// Datos reales: DATA_DIR (en el servidor, fuera del código) o ./data. Demostración: ./data/demo
+export const DATA = process.env.DATA_DIR || path.join(process.cwd(), 'data')
+const DEMO = path.join(process.cwd(), 'data', 'demo')
+const ARCHIVOS = ['hf.csv', 'flash.csv', 'pickup.csv', 'bonvoy.csv', 'disponibilidades.csv', 'bancos.csv',
+  'tipo_cambio.csv', 'paises.csv', 'ultima_ingesta.json']
+
+/** Firma de los archivos de datos: cambia cada vez que la ingesta escribe algo. */
+function firmaDatos() {
+  return ARCHIVOS.map((a) => {
+    try { return statSync(path.join(DATA, a)).mtimeMs } catch { return 0 }
+  }).join('|')
+}
+let firmaCache = ''
 
 const HOTELES: Hotel[] = [
   { id: 'marriott', nombre: 'Marriott Buenos Aires', grupo: 'panatel', habitaciones: 300, activo: true },
@@ -115,9 +127,11 @@ function anioAntes(f: string) {
 let cache: Datos | null = null
 
 export function cargarDatos(): Datos {
-  if (cache && process.env.NODE_ENV === 'production') return cache
+  const firma = firmaDatos()
+  if (cache && firma === firmaCache) return cache
+  firmaCache = firma
   const demo = !existsSync(path.join(DATA, 'hf.csv'))
-  const carpeta = demo ? path.join(DATA, 'demo') : DATA
+  const carpeta = demo ? DEMO : DATA
   const leer = (n: string) => {
     const r = path.join(carpeta, n)
     return existsSync(r) ? parseCsv(readFileSync(r, 'utf-8')) : []
@@ -294,7 +308,6 @@ export function cargarDatos(): Datos {
 }
 
 /** Datos que necesita cada pantalla (evita mandar todo al navegador). */
-export function datosTablero() {
-  const d = cargarDatos()
+export function datosTablero(d: Datos = cargarDatos()) {
   return { demo: d.demo, hoteles: d.hoteles, dias: d.dias, flash: d.flash, bonvoy: d.bonvoy, paises: d.paises, desde: d.desde, hasta: d.hasta }
 }

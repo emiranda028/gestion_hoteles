@@ -1,12 +1,12 @@
 import Simulador, { type Referencia } from '@/components/Simulador'
-import { cargarDatos } from '@/lib/datos'
+import { datosDelUsuario } from '@/lib/acceso'
 import { agregar, agrupar, sumarDias } from '@/lib/kpi'
 
 export const metadata = { title: 'Simulador de gestión · Gestión Hotelera' }
 
 /** Indicadores de los últimos 12 meses de cada hotel, para precargar el simulador. */
-function referencias(): Referencia[] {
-  const d = cargarDatos()
+async function referencias(): Promise<Referencia[]> {
+  const d = await datosDelUsuario()
   if (!d.hasta) return []
   const desde = sumarDias(d.hasta, -364)
   return [...agrupar(d.dias.filter((x) => x.f >= desde), (x) => x.h).entries()].map(([id, dias]) => {
@@ -25,6 +25,6 @@ function referencias(): Referencia[] {
   })
 }
 
-export default function Page() {
-  return <Simulador referencias={referencias()} />
+export default async function Page() {
+  return <Simulador referencias={await referencias()} />
 }

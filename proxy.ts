@@ -1,22 +1,24 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { COOKIE, leerToken } from './lib/sesion'
 
-// Acceso con usuario y contraseña (HTTP Basic). Se activa definiendo APP_USUARIO y
-// APP_PASSWORD en las variables de entorno del hosting. Sin ellas, la app queda abierta.
+// Todas las páginas requieren haber ingresado; /admin además requiere rol administrador.
 export function proxy(req: NextRequest) {
-  const usuario = process.env.APP_USUARIO
-  const clave = process.env.APP_PASSWORD
-  if (!usuario || !clave) return NextResponse.next()
-  const auth = req.headers.get('authorization')
-  if (auth?.startsWith('Basic ')) {
-    const [u, ...resto] = atob(auth.slice(6)).split(':')
-    if (u === usuario && resto.join(':') === clave) return NextResponse.next()
+  const { pathname, search } = req.nextUrl
+  if (pathname === '/login') return NextResponse.next()
+  const sesion = leerToken(req.cookies.get(COOKIE)?.value)
+  if (!sesion) {
+    if (pathname.startsWith('/api/')) return new NextResponse('No autorizado', { status: 401 })
+    const url = new URL('/login', req.url)
+    if (pathname !== '/') url.searchParams.set('volver', pathname + search)
+    return NextResponse.redirect(url)
   }
-  return new NextResponse('Acceso restringido', {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Gestion Hotelera", charset="UTF-8"' },
-  })
+  if (pathname.startsWith('/api/') && sesion.rol !== 'admin') return new NextResponse('Prohibido', { status: 403 })
+  if ((pathname.startsWith('/admin') || pathname === '/datos') && sesion.rol !== 'admin') {
+    return NextResponse.redirect(new URL('/', req.url))
+  }
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|ico|webp)$).*)'],
 }
