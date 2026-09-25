@@ -1,0 +1,93 @@
+# Configuración de la ingesta automática.
+# Todo lo que depende del formato de los PDF está acá, así se ajusta sin tocar código.
+# Para ver qué texto sale de un PDF y qué campos se reconocen:
+#   python -m ingesta.run inspeccionar ruta/al/reporte.pdf
+
+gmail:
+  # Credenciales por variables de entorno (en GitHub: Settings > Secrets > Actions)
+  usuario_env: GMAIL_USER            # agencialtelc@gmail.com
+  password_env: GMAIL_APP_PASSWORD   # contraseña de aplicación de Google (no la clave normal)
+  carpeta: INBOX
+  # Búsqueda con la misma sintaxis del buscador de Gmail.
+  # Ej.: 'from:reportes@hotel.com has:attachment filename:pdf newer_than:7d'
+  busqueda: "has:attachment filename:pdf newer_than:7d"
+  # Etiqueta que se agrega al mail una vez procesado (vacío = no etiquetar)
+  etiqueta_procesado: "Dashboard/Procesado"
+
+# Si el PDF no trae fecha, se usa la fecha del mail menos estos días
+# (los reportes suelen llegar a la mañana con el cierre del día anterior).
+dias_atras_si_no_hay_fecha: 1
+
+hoteles:
+  # id: identificador corto (no cambiar una vez que hay datos)
+  # detectar: textos que, si aparecen en el PDF, el nombre del archivo, el asunto
+  #           o el remitente, identifican al hotel (no distingue mayúsculas)
+  # habitaciones: inventario total, se usa si el PDF no informa disponibles
+  - id: hotel-demo-1
+    nombre: "Hotel Demo Centro"
+    habitaciones: 120
+    detectar: ["Hotel Demo Centro", "DEMO CENTRO"]
+  - id: hotel-demo-2
+    nombre: "Hotel Demo Costa"
+    habitaciones: 64
+    detectar: ["Hotel Demo Costa", "DEMO COSTA"]
+
+# Plantillas de lectura. Se usa la primera cuya lista "detectar" coincida con el
+# texto del PDF; la que tiene "detectar: []" es la genérica de respaldo.
+# En los patrones, NUM se reemplaza por una expresión que captura un número
+# (acepta 1.234,56 / 1,234.56 / $ / % / negativos entre paréntesis).
+# Se toma el primer patrón que encuentre algo; el número capturado es el primero
+# después de la etiqueta (en reportes con columnas Día/Mes/Año, el del día).
+plantillas:
+  - id: generica
+    detectar: []
+    fecha:
+      - "(?:Fecha(?: de (?:cierre|auditor[ií]a|negocio))?|Business Date|Date)\\s*[:\\-]?\\s*(\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4})"
+      - "(?:Fecha|Date)\\s*[:\\-]?\\s*(\\d{1,2}\\s+de\\s+[a-záéíóú]+\\s+(?:de\\s+)?\\d{4})"
+      - "(\\d{4}-\\d{2}-\\d{2})"
+      - "(\\d{1,2}/\\d{1,2}/\\d{4})"
+    campos:
+      habitaciones_disponibles:
+        - "Habitaciones disponibles\\s*[:\\-]?\\s*NUM"
+        - "Hab\\.? disponibles\\s*[:\\-]?\\s*NUM"
+        - "Rooms? Available\\s*[:\\-]?\\s*NUM"
+      habitaciones_ocupadas:
+        - "Habitaciones ocupadas\\s*[:\\-]?\\s*NUM"
+        - "Hab\\.? ocupadas\\s*[:\\-]?\\s*NUM"
+        - "Rooms? Occupied\\s*[:\\-]?\\s*NUM"
+        - "Rooms? Sold\\s*[:\\-]?\\s*NUM"
+      habitaciones_fuera_servicio:
+        - "(?:Habitaciones )?fuera de servicio\\s*[:\\-]?\\s*NUM"
+        - "Out of Order(?: Rooms)?\\s*[:\\-]?\\s*NUM"
+      huespedes:
+        - "(?:Hu[eé]spedes|Pasajeros|Pax)(?: en casa)?\\s*[:\\-]?\\s*NUM"
+        - "(?:In House )?Guests\\s*[:\\-]?\\s*NUM"
+      llegadas:
+        - "(?:Llegadas|Ingresos de hu[eé]spedes|Check[- ]?ins?)\\s*[:\\-]?\\s*NUM"
+        - "Arrivals\\s*[:\\-]?\\s*NUM"
+      salidas:
+        - "(?:Salidas|Check[- ]?outs?)\\s*[:\\-]?\\s*NUM"
+        - "Departures\\s*[:\\-]?\\s*NUM"
+      ocupacion_pct:
+        - "(?:% ?(?:de )?)?Ocupaci[oó]n\\s*(?:%)?\\s*[:\\-]?\\s*NUM"
+        - "Occupancy\\s*(?:%)?\\s*[:\\-]?\\s*NUM"
+      adr:
+        - "(?:Tarifa promedio|Tarifa media|ADR)\\s*[:\\-]?\\s*NUM"
+        - "Average (?:Room )?Rate\\s*[:\\-]?\\s*NUM"
+      ingreso_habitaciones:
+        - "Ingresos? (?:por |de )?(?:habitaciones|alojamiento)\\s*[:\\-]?\\s*NUM"
+        - "Room Revenue\\s*[:\\-]?\\s*NUM"
+      ingreso_ayb:
+        - "Ingresos? (?:de |por )?(?:A&B|AyB|alimentos y bebidas|gastronom[ií]a)\\s*[:\\-]?\\s*NUM"
+        - "F&B Revenue\\s*[:\\-]?\\s*NUM"
+      ingreso_otros:
+        - "(?:Otros ingresos|Ingresos? otros)\\s*[:\\-]?\\s*NUM"
+        - "Other Revenue\\s*[:\\-]?\\s*NUM"
+      ingreso_total:
+        - "(?:Ingresos? totale?s?|Total ingresos|Total general)\\s*[:\\-]?\\s*NUM"
+        - "Total Revenue\\s*[:\\-]?\\s*NUM"
+    # Tabla de procedencia/nacionalidad de huéspedes (opcional)
+    procedencia:
+      inicio: "(?:Procedencia|Nacionalidad(?:es)?|Pa[ií]s de origen)"
+      fin: "^(?:Total|TOTAL)\\b"
+      linea: "^(?P<pais>[A-Za-zÁÉÍÓÚÜÑáéíóúüñ .]+?)\\s+(?P<valor>NUM)(?:\\s|$)"

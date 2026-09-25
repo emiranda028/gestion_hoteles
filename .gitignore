@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.local
+# PDFs originales: no se versionan (datos sensibles del hotel)
+ingesta/pdfs/
+.vercel
+next-env.d.ts
+*.tsbuildinfo

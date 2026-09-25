@@ -1,0 +1,60 @@
+name: Ingesta diaria de reportes
+
+on:
+  schedule:
+    # 09:15, 12:15 y 18:15 hora de Argentina (UTC-3)
+    - cron: "15 12 * * *"
+    - cron: "15 15 * * *"
+    - cron: "15 21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ingesta
+  cancel-in-progress: false
+
+jobs:
+  ingesta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ingesta/requirements.txt
+
+      - run: pip install -r ingesta/requirements.txt
+
+      - name: Tipo de cambio
+        run: python -m ingesta.tipo_cambio
+
+      - name: Leer PDFs de Gmail
+        id: gmail
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python -m ingesta.run gmail
+        continue-on-error: true
+
+      - name: Guardar datos
+        run: |
+          git config user.name "ingesta-automatica"
+          git config user.email "ingesta@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "Sin cambios"
+          else
+            git commit -m "Datos: ingesta $(date -u +%F\ %H:%M) UTC"
+            git push
+          fi
+
+      # Si algún PDF no se pudo leer, el job queda en rojo y GitHub avisa por mail.
+      - name: Avisar errores de lectura
+        if: steps.gmail.outcome == 'failure'
+        run: |
+          cat data/ultima_ingesta.json || true
+          exit 1
