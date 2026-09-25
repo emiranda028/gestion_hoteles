@@ -11,7 +11,8 @@ echo "» Dependencias de la ingesta (Python)"
 .venv/bin/pip install -q -r ingesta/requirements.txt
 
 echo "» Dependencias y compilación de la web app"
-npm ci
+# --include=dev: para compilar hacen falta Tailwind y TypeScript aunque NODE_ENV=production
+npm ci --include=dev
 npm run build
 
 echo "» Arranque con PM2"
