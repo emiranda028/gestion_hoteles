@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="LTELC">
-  <!-- Perfil de una cabeza (trazo continuo) con la chispa de la idea adentro: "lo tengo en la cabeza" -->
-  <path d="M32 90 V74 C23 68 18 57 18 45 C18 26 33 11 52 11 C70 11 84 24 84 41 C84 46 83 49 85 53 L90 61.5 C91.2 63.6 89.8 66 87.4 66 H84 V73 C84 77.4 80.4 81 76 81 H66 V90"
-        fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M52 25 L55.2 36.8 L67 40 L55.2 43.2 L52 55 L48.8 43.2 L37 40 L48.8 36.8 Z" fill="#2EE6D6"/>
-</svg>

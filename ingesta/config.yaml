@@ -11,11 +11,16 @@
 gmail:
   usuario_env: GMAIL_USER            # agencialtelc@gmail.com
   password_env: GMAIL_APP_PASSWORD   # contraseña de aplicación de Google
-  carpeta: INBOX
+  # TODOS = "Todos los mensajes": los mails se pueden archivar, etiquetar o sacar de la bandeja
+  # de entrada sin problema. Solo NO hay que borrarlos antes de que se procesen (máximo 1 hora).
+  carpeta: TODOS
   # Sintaxis del buscador de Gmail. Los reportes llegan como PDF o dentro de un .zip,
-  # y las disponibilidades como .xlsx.
+  # y las disponibilidades como .xlsx. Los que no son reportes se ignoran.
   busqueda: "has:attachment newer_than:4d"
   etiqueta_procesado: "Dashboard/Procesado"
+
+# El PDF "Auditoría" (de ahí sale el Membership) no trae el nombre del hotel: lo manda City Express
+auditoria_hotel: city-express
 
 grupos:
   - id: panatel

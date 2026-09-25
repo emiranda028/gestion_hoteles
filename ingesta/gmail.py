@@ -40,7 +40,22 @@ class Gmail:
         self.conf = conf
         self.imap = imaplib.IMAP4_SSL("imap.gmail.com")
         self.imap.login(usuario, clave.replace(" ", ""))
-        self.imap.select(f'"{conf.get("carpeta", "INBOX")}"')
+        carpeta = conf.get("carpeta", "TODOS")
+        if carpeta.upper() == "TODOS":
+            carpeta = self._carpeta_todos()
+        estado, _ = self.imap.select(f'"{carpeta}"', readonly=False)
+        if estado != "OK":
+            raise RuntimeError(f"No se pudo abrir la carpeta {carpeta!r} de Gmail")
+
+    def _carpeta_todos(self) -> str:
+        """'Todos' / 'All Mail': su nombre depende del idioma de la cuenta, se busca por el atributo \\All.
+        Buscando ahí no importa si los mails se archivan, se etiquetan o se mueven de la bandeja de entrada."""
+        _, lista = self.imap.list()
+        for linea in lista or []:
+            texto = linea.decode(errors="ignore")
+            if "\\All" in texto:
+                return texto.rsplit(' "/" ', 1)[-1].strip().strip('"')
+        return "INBOX"
 
     def adjuntos(self):
         """Itera los adjuntos PDF, ZIP y Excel de los mails que cumplen la búsqueda configurada."""

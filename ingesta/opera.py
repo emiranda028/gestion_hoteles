@@ -38,6 +38,8 @@ def _num(s: str) -> float:
 
 def tipo_reporte(texto: str) -> str | None:
     cab = "\n".join(texto.splitlines()[:6])
+    if "HUESPEDES VIP" in texto.upper() and "PREVISI" in texto.upper():
+        return "auditoria"
     if "F116 Manager" in cab:
         return "flash"
     if "R106 History and Forecast" in cab:
@@ -229,4 +231,39 @@ def leer_elite(texto: str) -> EliteArrivals:
     return EliteArrivals(nombre, emitido, llegadas)
 
 
-__all__ = ["extraer_texto", "tipo_reporte", "leer_flash", "leer_hf", "leer_elite", "a_numero"]
+# --------------------------------------------------------------------------- Auditoría (City Express)
+
+_MESES_EN = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+@dataclass
+class Auditoria:
+    fecha: date  # fecha de la auditoría (cierre del día)
+    niveles: dict[str, int]  # nivel Bonvoy -> cantidad de huéspedes VIP informados
+
+
+def leer_auditoria(texto: str) -> Auditoria:
+    """Reporte de auditoría de City Express: de acá sale el Membership (lista 'HUESPEDES VIP')."""
+    m = re.search(r"([A-Za-z]{3})[a-z]*\.? (\d{1,2}), (\d{4})", texto)
+    if not m or m.group(1).lower() not in _MESES_EN:
+        raise ValueError("Auditoría sin fecha legible")
+    fecha = date(int(m.group(3)), _MESES_EN[m.group(1).lower()], int(m.group(2)))
+    niveles: dict[str, int] = {}
+    dentro = False
+    for linea in texto.splitlines():
+        linea = linea.strip()
+        if linea.upper().startswith("HUESPEDES VIP"):
+            dentro = True
+            continue
+        if dentro:
+            if not linea or linea.upper().startswith(("GSS", "ESS")):
+                break
+            mm = re.match(r"^.+\s-\s*([A-Za-zÁÉÍÓÚáéíóú ]+)$", linea)
+            if mm:
+                nivel = mm.group(1).strip()
+                niveles[nivel] = niveles.get(nivel, 0) + 1
+    return Auditoria(fecha, niveles)
+
+
+__all__ = ["extraer_texto", "tipo_reporte", "leer_flash", "leer_hf", "leer_elite", "leer_auditoria", "a_numero"]

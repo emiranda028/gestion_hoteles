@@ -5,7 +5,7 @@ import calendar
 import io
 import zipfile
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 from . import almacen, disponibilidades, opera
 
@@ -96,6 +96,8 @@ def _pdf(nombre: str, contenido: bytes, config: dict) -> Resultado:
     tipo = opera.tipo_reporte(texto)
     if tipo is None:
         return Resultado(nombre, "ignorado", True, detalle="no es un reporte que se use en los tableros")
+    if tipo == "auditoria":
+        return _auditoria(nombre, texto, config)
     nombre_hotel, _ = opera.cabecera(texto)
     hotel = hotel_por_nombre(nombre_hotel, config)
     if hotel is None:
@@ -143,6 +145,21 @@ def _pdf(nombre: str, contenido: bytes, config: dict) -> Resultado:
     fechas = sorted({f.isoformat() for f, _ in e.llegadas})
     return Resultado(nombre, "Elite Arrivals", True, hid, ", ".join(fechas),
                      detalle=f"{sum(e.llegadas.values())} llegadas Bonvoy")
+
+
+def _auditoria(nombre: str, texto: str, config: dict) -> Resultado:
+    """La auditoría no trae el nombre del hotel: la manda solo el hotel indicado en config (auditoria_hotel)."""
+    hid = config.get("auditoria_hotel")
+    if not hid:
+        return Resultado(nombre, "Auditoría", False, avisos=["Falta 'auditoria_hotel' en config.yaml"])
+    a = opera.leer_auditoria(texto)
+    # igual que en la base: la fecha es la del día siguiente a la auditoría (día de llegada)
+    fecha = a.fecha + timedelta(days=1)
+    filas = [{"hotel": hid, "fecha": fecha, "nivel": nivel_bonvoy(n), "cantidad": c} for n, c in a.niveles.items()]
+    if filas:
+        almacen.upsert("bonvoy", filas, reemplazar_por=("hotel", "fecha"))
+    return Resultado(nombre, "Auditoría (Membership)", True, hid, fecha.isoformat(),
+                     detalle=f"{sum(a.niveles.values())} huéspedes Bonvoy")
 
 
 def _fila_flash(hid: str, f: opera.Flash, concepto: str, v: tuple) -> dict:

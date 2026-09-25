@@ -198,3 +198,30 @@ def test_normalizar_pesos_a_dolares(data_tmp):
     assert (filas[1]["room_revenue"], filas[1]["adr"]) == ("1500", "150")  # solo la tarifa estaba mal
     assert filas[2]["adr"] == "150"
     assert normalizar()["hf"] == (0, 0)  # idempotente
+
+
+AUDITORIA = """Sep 24, 2026
+PREVISIÓN
+Lunes 21 Martes 22 Miércoles 23 Jueves 24 Viernes 25 Sábado 26 Domingo 27
+68.75% 76.00% 88.00% 100.00% 83.33% 89.80% 80.00%
+OCUPACIÓN
+HUESPEDES VIP GRUPOS
+Perez Juan - Ambassador
+Gomez Ana - Gold
+Diaz Luis - Gold
+Lopez Eva - Member
+GSS Y ESS
+LOYALTY
+"""
+
+
+def test_auditoria_membership(data_tmp):
+    from ingesta.procesar import procesar
+    a = opera.leer_auditoria(AUDITORIA)
+    assert a.fecha == date(2026, 9, 24)
+    assert a.niveles == {"Ambassador": 1, "Gold": 2, "Member": 1}
+    assert opera.tipo_reporte(AUDITORIA) == "auditoria"
+    rs = procesar("Auditoria.pdf", muestras.pdf(AUDITORIA), {**CONFIG_PRUEBA, "auditoria_hotel": "costa"}, None)
+    assert rs[0].ok and rs[0].fecha == "2026-09-25"
+    niveles = {r["nivel"]: r["cantidad"] for r in almacen.leer("bonvoy")}
+    assert niveles == {"Ambassador Elite (AMB)": "1", "Gold Elite (GLD)": "2", "Member (MRD)": "1"}

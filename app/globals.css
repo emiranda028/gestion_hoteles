@@ -35,3 +35,27 @@ td.text-right, th.text-right { white-space: nowrap; }
   .tarjeta { box-shadow: none !important; border-color: #d4d4d4 !important; break-inside: avoid; }
   main { padding: 0 !important; max-width: none !important; }
 }
+
+/* ---- Marca LTELC: "Lo tengo en la cabeza" -> LTELC ---- */
+.ltelc { display: inline-flex; font-family: var(--font-marca); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.ltelc .p { display: inline-flex; margin-right: 0.3em; }
+.ltelc .p:last-child { margin-right: 0; }
+.ltelc .r { display: inline-block; overflow: hidden; max-width: 6em; font-weight: 400; color: #737373; }
+
+.ltelc-animado .p { opacity: 0; animation: ltelc-entrar 0.45s ease forwards, ltelc-juntar 0.7s cubic-bezier(.6,0,.2,1) 2.2s forwards;
+  animation-delay: calc(var(--i) * 0.18s), 2.2s; }
+.ltelc-animado .r { animation: ltelc-cerrar 0.7s cubic-bezier(.6,0,.2,1) 2.2s forwards; }
+@keyframes ltelc-entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ltelc-juntar { from { opacity: 1; } to { opacity: 1; margin-right: 0; } }
+@keyframes ltelc-cerrar { to { max-width: 0; opacity: 0; } }
+
+.ltelc-hover .p { margin-right: 0; transition: margin-right 0.4s ease; }
+.ltelc-hover .r { max-width: 0; opacity: 0; transition: max-width 0.5s ease, opacity 0.4s ease; }
+a:hover > .ltelc-hover .p, .ltelc-hover:hover .p { margin-right: 0.3em; }
+a:hover > .ltelc-hover .p:last-child, .ltelc-hover:hover .p:last-child { margin-right: 0; }
+a:hover > .ltelc-hover .r, .ltelc-hover:hover .r { max-width: 6em; opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ltelc-animado .p { opacity: 1; margin-right: 0; animation: none; }
+  .ltelc-animado .r { max-width: 0; opacity: 0; animation: none; }
+}

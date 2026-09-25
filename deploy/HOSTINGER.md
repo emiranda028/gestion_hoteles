@@ -16,10 +16,16 @@ En la cuenta agencialtelc@gmail.com:
 2. Crear una **contraseña de aplicación** (Seguridad → Contraseñas de aplicaciones) y guardarla: son 16 letras.
 3. Gmail → Configuración → Ver toda la configuración → Reenvío y correo POP/IMAP → **Habilitar IMAP**.
 
-No hace falta crear filtros: la ingesta mira todos los mails de los últimos 4 días con adjuntos,
-reconoce cada archivo por su contenido (Manager Flash, H&F, Elite Arrivals, disponibilidades) e
-ignora el resto. Da igual cuántos mails lleguen por día o en qué orden. Cada mail procesado queda
+No hace falta crear filtros: la ingesta mira **todos** los mails de los últimos 4 días con adjuntos
+(bandeja de entrada, archivados y etiquetas), reconoce cada archivo por su contenido (Manager Flash,
+H&F, Elite Arrivals, Auditoría de City Express, disponibilidades) e ignora el resto: por ejemplo los
+reportes en pesos. Da igual cuántos mails lleguen por día o en qué orden. Cada mail procesado queda
 con la etiqueta **Dashboard/Procesado** y no se vuelve a leer.
+
+**Se pueden archivar, etiquetar o mover a otras carpetas** sin problema. Lo único: **no borrarlos**
+hasta que tengan la etiqueta Dashboard/Procesado (pasa como máximo una hora después de llegar).
+Si quieren la bandeja limpia, un filtro de Gmail puede mandarlos directo a una etiqueta
+"Reportes hoteles" y sacarlos de la bandeja de entrada.
 
 ## 2. Preparar el VPS
 
@@ -32,9 +38,14 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt in
 
 ## 3. Bajar el código
 
+El código se guarda en GitHub (conviene que el repositorio sea **privado**) y el VPS lo baja de ahí.
+Con el repositorio privado, el VPS necesita permiso de lectura: en el VPS correr
+`ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519` y pegar el contenido de `~/.ssh/id_ed25519.pub` en
+GitHub → el repositorio → Settings → Deploy keys → Add deploy key (solo lectura).
+
 ```bash
 cd ~
-git clone https://github.com/emiranda028/gestion_hoteles.git
+git clone git@github.com:emiranda028/gestion_hoteles.git
 cd gestion_hoteles
 cp .env.example .env
 nano .env        # completar: DATA_DIR, SESSION_SECRET, ADMIN_USUARIO, ADMIN_PASSWORD, GMAIL_*
@@ -62,8 +73,11 @@ y programa la ingesta cada hora. Para probar la ingesta en el momento: `bash dep
 
 ## 6. Dominio y HTTPS
 
-1. En hPanel → Dominios → DNS: un registro **A** para el subdominio (p. ej. `hoteles.ltelc.com`)
-   apuntando a la IP del VPS.
+Se recomienda un **subdominio** (p. ej. `hoteles.consultoraltelc.com`) y no una ruta
+(`consultoraltelc.com/hoteles`): cada app queda independiente, se pueden sumar otras
+(`bitacora.…`, `finanzas.…`) en el mismo VPS y la web institucional no se toca.
+
+1. En hPanel → Dominios → DNS: un registro **A** para el subdominio apuntando a la IP del VPS.
 2. En el VPS:
 
 ```bash
@@ -71,7 +85,7 @@ sudo cp deploy/nginx.conf /etc/nginx/sites-available/gestion-hoteles
 sudo nano /etc/nginx/sites-available/gestion-hoteles     # poner el dominio real
 sudo ln -s /etc/nginx/sites-available/gestion-hoteles /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d hoteles.ltelc.com
+sudo certbot --nginx -d hoteles.consultoraltelc.com
 ```
 
 ## 7. Usuarios
