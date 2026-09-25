@@ -37,7 +37,9 @@ export async function iniciarSesion(_: EstadoLogin, form: FormData): Promise<Est
   intentos.delete(clave)
   guardarUsuarios(leerUsuarios().map((x) => (x.usuario === u.usuario ? { ...x, ultimoIngreso: new Date().toISOString() } : x)))
   ;(await cookies()).set(COOKIE, crearToken(u.usuario, u.rol), {
-    httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: DURACION_HORAS * 3600,
+    httpOnly: true, sameSite: 'lax', path: '/', maxAge: DURACION_HORAS * 3600,
+    // solo por https; COOKIE_SEGURA=false permite probar por http (con la IP) antes de tener dominio
+    secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SEGURA !== 'false',
   })
   const volver = String(form.get('volver') ?? '/')
   redirect(volver.startsWith('/') && !volver.startsWith('//') ? volver : '/')
