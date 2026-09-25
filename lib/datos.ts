@@ -92,7 +92,7 @@ const ARCHIVOS = ['hf.csv', 'flash.csv', 'pickup.csv', 'bonvoy.csv', 'disponibil
 /** Firma de los archivos de datos: cambia cada vez que la ingesta escribe algo. */
 function firmaDatos() {
   return ARCHIVOS.map((a) => {
-    try { return statSync(path.join(DATA, a)).mtimeMs } catch { return 0 }
+    try { return statSync(/*turbopackIgnore: true*/ path.join(DATA, a)).mtimeMs } catch { return 0 }
   }).join('|')
 }
 let firmaCache = ''

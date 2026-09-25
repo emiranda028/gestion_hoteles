@@ -13,6 +13,7 @@ echo "» Dependencias de la ingesta (Python)"
 echo "» Dependencias y compilación de la web app"
 # --include=dev: para compilar hacen falta Tailwind y TypeScript aunque NODE_ENV=production
 npm ci --include=dev
+rm -rf .next   # compilación limpia (evita arrastrar errores de un intento anterior)
 npm run build
 
 echo "» Arranque con PM2"
