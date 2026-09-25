@@ -1,7 +1,7 @@
 """Punto de entrada de la ingesta.
 
 Uso:
-  python -m ingesta.run gmail                         # baja los adjuntos nuevos de Gmail y actualiza data/
+  python -m ingesta.run gmail [--dias 30]             # baja los adjuntos nuevos de Gmail y actualiza data/
   python -m ingesta.run carpeta RUTA [--fecha AAAA-MM-DD]
                                                       # procesa PDFs / ZIPs / Excel de una carpeta
   python -m ingesta.run inspeccionar ARCHIVO          # muestra qué se lee de un archivo, sin guardar nada
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import json
 import sys
 from datetime import date
@@ -60,10 +61,12 @@ def _cerrar(config: dict, resultados: list[Resultado]) -> int:
     return _imprimir(resultados)
 
 
-def cmd_gmail(_args) -> int:
+def cmd_gmail(args) -> int:
     from .gmail import Gmail
 
     config = cargar_config()
+    if args.dias:  # p. ej. la primera vez: recuperar los mails de las últimas semanas
+        config["gmail"]["busqueda"] = re.sub(r"newer_than:\d+d", f"newer_than:{args.dias}d", config["gmail"]["busqueda"])
     cliente = Gmail(config["gmail"])
     resultados: list[Resultado] = []
     procesados: dict[str, dict] = {}
@@ -159,7 +162,9 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m ingesta.run", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("gmail").set_defaults(fn=cmd_gmail)
+    g = sub.add_parser("gmail")
+    g.add_argument("--dias", type=int, help="leer los mails de los últimos N días (por defecto, los de config.yaml)")
+    g.set_defaults(fn=cmd_gmail)
     c = sub.add_parser("carpeta")
     c.add_argument("ruta")
     c.add_argument("--fecha", help="fecha de recepción a usar para las disponibilidades (AAAA-MM-DD)")

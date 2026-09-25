@@ -69,7 +69,17 @@ bash deploy/instalar.sh
 ```
 
 Instala todo, compila, deja la app corriendo con PM2 (se levanta sola si el servidor se reinicia)
-y programa la ingesta cada hora. Para probar la ingesta en el momento: `bash deploy/ingesta.sh`.
+y programa la ingesta cada hora.
+
+**Primera lectura del mail:** los datos iniciales llegan hasta el 25/09/2026. Para recuperar todo lo que
+llegó después, la primera vez leer los mails de las últimas semanas (ajustar los días):
+
+```bash
+set -a; source .env; set +a
+.venv/bin/python -m ingesta.run gmail --dias 45
+```
+
+Después, la ingesta automática de cada hora mira los últimos 4 días.
 
 ## 6. Dominio y HTTPS
 
