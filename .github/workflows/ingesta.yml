@@ -37,6 +37,17 @@ jobs:
         run: python -m ingesta.run gmail
         continue-on-error: true
 
+      # Planilla de huéspedes por país (Marriott BA) compartida en Drive con "cualquier persona con el enlace".
+      # Variable del repositorio PAISES_URL, p. ej.:
+      #   https://docs.google.com/spreadsheets/d/ID/export?format=xlsx   (si es una hoja de Google)
+      #   https://drive.google.com/uc?export=download&id=ID              (si es un .xlsx subido a Drive)
+      - name: Huéspedes por país (Drive)
+        if: vars.PAISES_URL != ''
+        run: |
+          curl -sSL "${{ vars.PAISES_URL }}" -o /tmp/paises.xlsx
+          python -m ingesta.run paises /tmp/paises.xlsx
+        continue-on-error: true
+
       - name: Tipo de cambio BNA
         run: python -m ingesta.tipo_cambio
 

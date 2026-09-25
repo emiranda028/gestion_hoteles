@@ -158,3 +158,43 @@ def test_reportes_reales():
                 assert opera.leer_hf(texto).dias
             vistos += tipo is not None
     assert vistos
+
+
+def test_paises(data_tmp):
+    from openpyxl import Workbook
+
+    from ingesta import paises
+    wb = Workbook()
+    wb.active.title = "Resumen"
+    ws = wb.create_sheet("País Origen")
+    ws.append(["Continente", "Año", "PAÍS ", "Mes", "N° Mes", "Importe"])
+    ws.append(["AMÉRICA", 2025, "ARGENTINA", "Enero", 1, 100])
+    ws.append(["AMÉRICA", 2025, "ARGENTINA ", "Enero", 1, 5])
+    ws.append(["EUROPA", 2025, "ESPAÑA", "Febrero", 2, 7])
+    ws.append(["ASIA", 2025, "VIETNAM", "Febrero", 2, 0])
+    import io
+    buf = io.BytesIO()
+    wb.save(buf)
+    assert paises.es_planilla(buf.getvalue())
+    filas = paises.leer(buf.getvalue())
+    assert [(f["mes"], f["pais"], f["huespedes"]) for f in filas] == [("2025-01", "ARGENTINA", 105), ("2025-02", "ESPAÑA", 7)]
+    paises.guardar(filas)
+    paises.guardar(filas)
+    assert len(almacen.leer("paises")) == 2
+
+
+def test_normalizar_pesos_a_dolares(data_tmp):
+    from ingesta.normalizar import normalizar
+    almacen.escribir("tipo_cambio", almacen.TC_COLS, [{"fecha": "2025-01-10", "ars_por_usd": "1000"}])
+    base = {c: "" for c in almacen.HF_COLS}
+    almacen.escribir("hf", almacen.HF_COLS, [
+        {**base, "hotel": "h", "fecha": "2025-01-10", "total_occ": "10", "room_revenue": "1500000", "adr": "150000"},
+        {**base, "hotel": "h", "fecha": "2025-01-11", "total_occ": "10", "room_revenue": "1500", "adr": "150000"},
+        {**base, "hotel": "h", "fecha": "2025-01-12", "total_occ": "10", "room_revenue": "1500", "adr": "150"},
+    ])
+    assert normalizar()["hf"] == (2, 0)
+    filas = almacen.leer("hf")
+    assert (filas[0]["room_revenue"], filas[0]["adr"]) == ("1500", "150")  # toda la fila estaba en pesos
+    assert (filas[1]["room_revenue"], filas[1]["adr"]) == ("1500", "150")  # solo la tarifa estaba mal
+    assert filas[2]["adr"] == "150"
+    assert normalizar()["hf"] == (0, 0)  # idempotente

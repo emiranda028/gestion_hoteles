@@ -17,20 +17,27 @@ data/  hf.csv · flash.csv · pickup.csv · bonvoy.csv · disponibilidades.csv �
        hoteles.xlsx (mismas columnas que la base de Power BI)
    ▼
 Web app (Next.js)
-   ├── Tablero ............. Manager Flash del día + ocupación, ADR, RevPAR, ingresos, Bonvoy, comparativo
+   ├── Tablero ............. Manager Flash del día + ocupación, ADR, RevPAR, ingresos, Bonvoy, países, comparativo
    ├── Forecast y pick up .. on the books por mes, pick up diario y semanal, próximos 30/60/90 días
-   ├── Disponibilidades .... saldos por grupo (Panatel, Numah), evolución y detalle por cuenta
+   ├── Disponibilidades .... saldos por grupo (Panatel, Numah) tal como los informan, evolución y detalle
    ├── Proyecciones ........ estacionalidad + tendencia, escenarios
    ├── Simulador ........... cuánto cobramos por operar un hotel y cuánto gana el propietario
    └── Datos ............... última ingesta, errores de lectura, días faltantes, descargas
 ```
 
-**Moneda:** todo se trabaja en dólares (los reportes de Opera vienen en USD). El botón "ARS (BNA)"
-convierte con el dólar Banco Nación vendedor de cada día. En disponibilidades, los saldos en pesos se
-pasan a dólares con ese mismo tipo de cambio y los dólares se toman por su monto original.
+**Moneda:** los indicadores de los hoteles se trabajan siempre en dólares (así vienen hoy los reportes
+de Opera). El botón "ARS (BNA)" los muestra en pesos con el dólar Banco Nación vendedor de cada día.
+Los registros viejos que la base tiene en pesos (de cuando los hoteles informaban en pesos) se pasan a
+dólares automáticamente con el BNA del día (`ingesta/normalizar.py`).
+**Disponibilidades** se muestran tal cual las manda cada grupo: pesos en pesos, dólares y euros en su
+moneda, y con el tipo de cambio que informa el grupo.
+
+**Huéspedes por país:** solo Marriott Buenos Aires, desde la planilla "Venta x PAIS" de Drive
+(`python -m ingesta.run paises archivo.xlsx`, o automático con la variable `PAISES_URL`, ver abajo).
 
 **Hoteles:** Marriott Buenos Aires, Sheraton Mar del Plata y Sheraton Bariloche (grupo Panatel) y
-City Express Palermo (grupo Numah). Maitei Posadas queda en el histórico. Se configuran en
+City Express Palermo (grupo Numah). Maitei Posadas ya no pertenece al grupo: sus datos quedan como
+histórico y no suman en "Todos los hoteles". Se configuran en
 `ingesta/config.yaml` (nombres tal como aparecen en Opera y en la base) y en `lib/datos.ts`.
 
 > **Datos confidenciales.** Mientras el repositorio sea público, la carpeta `data/` (salvo `data/demo/`)
@@ -51,6 +58,11 @@ En el repositorio: *Settings → Secrets and variables → Actions → New repos
 |---|---|
 | `GMAIL_USER` | `agencialtelc@gmail.com` |
 | `GMAIL_APP_PASSWORD` | la contraseña de aplicación de 16 letras |
+
+Para la planilla de países: compartirla en Drive como "cualquier persona con el enlace" y crear la
+variable del repositorio `PAISES_URL` (*Settings → Secrets and variables → Actions → Variables*) con
+`https://docs.google.com/spreadsheets/d/ID/export?format=xlsx` si es una hoja de Google, o
+`https://drive.google.com/uc?export=download&id=ID` si es un .xlsx subido a Drive.
 
 La ingesta corre sola a las 9:15, 12:15 y 18:15 (hora argentina). También se puede lanzar a mano
 desde *Actions → Ingesta diaria de reportes → Run workflow*. Si un PDF no se puede leer, el job

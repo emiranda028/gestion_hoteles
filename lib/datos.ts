@@ -7,7 +7,7 @@ import type { Dia } from './kpi.ts'
 // Todo se trabaja en dólares (así vienen los reportes de Opera). El tipo de cambio BNA vendedor
 // solo se usa para ver en pesos y para pasar a dólares los saldos en pesos de las disponibilidades.
 
-export type Hotel = { id: string; nombre: string; grupo: string; habitaciones: number }
+export type Hotel = { id: string; nombre: string; grupo: string; habitaciones: number; activo: boolean }
 export type Grupo = { id: string; nombre: string }
 
 export type DiaForecast = { f: string; h: string; ocup: number; disp: number; ingHab: number; grp: number }
@@ -19,19 +19,25 @@ export type FlashHotel = {
   anterior: Record<string, [number | null, number | null, number | null]> | null // mismo día del año anterior
 }
 export type BonvoyMes = { mes: string; h: string; nivel: string; n: number }
+export type PaisMes = { mes: string; h: string; pais: string; continente: string; n: number }
+// Disponibilidades tal cual las informa cada grupo: pesos en pesos, dólares y euros en su moneda,
+// y el tipo de cambio que usa el grupo.
 export type Disponible = {
   g: string
   f: string
-  tc: number // BNA vendedor usado para convertir
-  pesos: number // bancos en pesos + inversiones (ARS)
+  total: number // DISPONIBILIDADES (ARS, incluye proyectados)
+  subtotal: number // bancos + FCI + moneda extranjera valuada (ARS)
+  monedaLocal: number
+  monedaExtranjera: number // moneda extranjera valuada en pesos al tipo de cambio del grupo
+  usd: number // dólares en moneda original
+  eur: number // euros en moneda original
+  tcUsd: number
+  tcEur: number
   bancosPesos: number
   inversiones: number
-  usd: number // dólares (bancos + caja), en moneda original
-  eurArs: number // euros valuados en pesos
-  proyectado: number // cobros - pagos - cheques (ARS)
   cobros: number
-  pagos: number
-  totalArs: number // total informado por el grupo (con proyectados)
+  cheques: number // negativo
+  pagos: number // negativo
 }
 export type CuentaBanco = {
   g: string; f: string; seccion: string; empresa: string; banco: string; cuenta: string
@@ -51,6 +57,7 @@ export type Datos = {
   pickup: FotoPickup[]
   flash: FlashHotel[]
   bonvoy: BonvoyMes[]
+  paises: PaisMes[]
   disponibles: Disponible[]
   cuentas: CuentaBanco[]
   tipoCambio: { fecha: string; valor: number } | null
@@ -62,14 +69,14 @@ export type Datos = {
 const DATA = path.join(process.cwd(), 'data')
 
 const HOTELES: Hotel[] = [
-  { id: 'marriott', nombre: 'Marriott Buenos Aires', grupo: 'panatel', habitaciones: 300 },
-  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', grupo: 'panatel', habitaciones: 194 },
-  { id: 'sheraton-bcr', nombre: 'Sheraton Bariloche', grupo: 'panatel', habitaciones: 161 },
-  { id: 'city-express', nombre: 'City Express Palermo', grupo: 'numah', habitaciones: 51 },
-  { id: 'maitei', nombre: 'Maitei Posadas', grupo: 'numah', habitaciones: 98 },
+  { id: 'marriott', nombre: 'Marriott Buenos Aires', grupo: 'panatel', habitaciones: 300, activo: true },
+  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', grupo: 'panatel', habitaciones: 194, activo: true },
+  { id: 'sheraton-bcr', nombre: 'Sheraton Bariloche', grupo: 'panatel', habitaciones: 161, activo: true },
+  { id: 'city-express', nombre: 'City Express Palermo', grupo: 'numah', habitaciones: 51, activo: true },
+  { id: 'maitei', nombre: 'Maitei Posadas (histórico)', grupo: 'numah', habitaciones: 98, activo: false },
   // datos de demostración (data/demo)
-  { id: 'demo-centro', nombre: 'Hotel Demo Centro', grupo: 'demo', habitaciones: 220 },
-  { id: 'demo-costa', nombre: 'Hotel Demo Costa', grupo: 'demo', habitaciones: 140 },
+  { id: 'demo-centro', nombre: 'Hotel Demo Centro', grupo: 'demo', habitaciones: 220, activo: true },
+  { id: 'demo-costa', nombre: 'Hotel Demo Costa', grupo: 'demo', habitaciones: 140, activo: true },
 ]
 const GRUPOS: Grupo[] = [
   { id: 'panatel', nombre: 'Panatel' },
@@ -189,18 +196,16 @@ export function cargarDatos(): Datos {
     const suma = (concepto: string, tipo?: string, moneda?: string) =>
       filas.filter((x) => x.concepto === concepto && (!tipo || x.tipo_moneda === tipo) && (!moneda || x.moneda === moneda))
         .reduce((s, x) => s + num(x.importe), 0)
-    const tcGrupo = suma('Tipo de cambio USD')
-    const tc = tcPara(f) ?? tcGrupo
-    const cobros = suma('Cobranzas Proyectadas', undefined, 'Local') + suma('Efectivo - Recaudación') +
-      suma('Aportes socios') + suma('Cobranzas Proyectadas', 'USD', 'Extranjera') * tc
-    const pagos = suma('Cheques emitidos') + suma('Pagos programados')
     const bancosPesos = suma('Bancos pesos')
     const inversiones = suma('Inversiones')
+    const monedaExtranjera = suma('Moneda extranjera', 'ARS', 'Local')
     return {
-      g, f, tc, bancosPesos, inversiones, pesos: bancosPesos + inversiones,
-      usd: suma('Moneda extranjera', 'USD', 'Extranjera'),
-      eurArs: suma('Moneda extranjera', 'EUR', 'Extranjera') * suma('Tipo de cambio EUR'),
-      cobros, pagos, proyectado: cobros + pagos, totalArs: suma('DISPONIBILIDADES'),
+      g, f, total: suma('DISPONIBILIDADES'), subtotal: bancosPesos + inversiones + monedaExtranjera,
+      monedaLocal: suma('Moneda Local'), monedaExtranjera,
+      usd: suma('Moneda extranjera', 'USD', 'Extranjera'), eur: suma('Moneda extranjera', 'EUR', 'Extranjera'),
+      tcUsd: suma('Tipo de cambio USD'), tcEur: suma('Tipo de cambio EUR'), bancosPesos, inversiones,
+      cobros: suma('Cobranzas Proyectadas') + suma('Efectivo - Recaudación') + suma('Aportes socios'),
+      cheques: suma('Cheques emitidos'), pagos: suma('Pagos programados'),
     }
   }).sort((a, b) => a.f.localeCompare(b.f) || a.g.localeCompare(b.g))
 
@@ -223,6 +228,7 @@ export function cargarDatos(): Datos {
     pickup,
     flash,
     bonvoy: [...bonvoyIdx.values()],
+    paises: leer('paises.csv').map((r) => ({ mes: r.mes, h: r.hotel, pais: r.pais, continente: r.continente, n: num(r.huespedes) })),
     disponibles,
     cuentas,
     tipoCambio: tcF.length ? { fecha: tcF[tcF.length - 1], valor: tcV[tcV.length - 1] } : null,
@@ -236,5 +242,5 @@ export function cargarDatos(): Datos {
 /** Datos que necesita cada pantalla (evita mandar todo al navegador). */
 export function datosTablero() {
   const d = cargarDatos()
-  return { demo: d.demo, hoteles: d.hoteles, dias: d.dias, flash: d.flash, bonvoy: d.bonvoy, desde: d.desde, hasta: d.hasta }
+  return { demo: d.demo, hoteles: d.hoteles, dias: d.dias, flash: d.flash, bonvoy: d.bonvoy, paises: d.paises, desde: d.desde, hasta: d.hasta }
 }

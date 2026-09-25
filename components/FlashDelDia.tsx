@@ -32,6 +32,7 @@ function kpis(b: ReturnType<typeof base>) {
 
 export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; hoteles: Hotel[] }) {
   let filas = hoteles
+    .filter((h) => h.activo)
     .map((h) => ({ h, f: flash.find((x) => x.h === h.id) }))
     .filter((x): x is { h: Hotel; f: FlashHotel } => !!x.f)
   const ultima = filas.reduce((m, x) => (x.f.fecha > m ? x.f.fecha : m), '')
@@ -53,7 +54,7 @@ export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; h
       <td className="py-1.5 pl-3 text-right">
         <div>{txt}</div>
         {dif !== null && (
-          <div className={`text-[11px] ${dif >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+          <div className={`text-[11px] ${dif >= 0 ? 'text-emerald-600' : 'text-acento'}`}>
             {variacionTexto(dif, tipo === 'pct')}
           </div>
         )}
@@ -64,10 +65,10 @@ export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; h
   const Fila = ({ nombre, act, ant, fechaFila, fuerte }: {
     nombre: string; act: ReturnType<typeof kpis>; ant: ReturnType<typeof kpis> | null; fechaFila?: string; fuerte?: boolean
   }) => (
-    <tr className={`border-t border-slate-100 align-top ${fuerte ? 'font-semibold' : ''}`}>
+    <tr className={`border-t border-neutral-100 align-top ${fuerte ? 'font-semibold' : ''}`}>
       <td className="py-1.5 pr-3">
         {nombre}
-        {fechaFila && fechaFila !== fecha && <div className="text-[11px] font-normal text-red-600">al {fechaLarga(fechaFila)}</div>}
+        {fechaFila && fechaFila !== fecha && <div className="text-[11px] font-normal text-acento">al {fechaLarga(fechaFila)}</div>}
       </td>
       {[0, 1, 2].map((i) => <Celda key={`o${i}`} v={act[i].occ} ant={ant?.[i].occ} tipo="pct" />)}
       {[0, 1, 2].map((i) => <Celda key={`a${i}`} v={act[i].adr} ant={ant?.[i].adr} tipo="usd" />)}
@@ -76,13 +77,13 @@ export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; h
     </tr>
   )
 
-  const cab = (t: string, n: number) => <th colSpan={n} className="border-l border-slate-100 py-1 pl-3 text-center">{t}</th>
+  const cab = (t: string, n: number) => <th colSpan={n} className="border-l border-neutral-100 py-1 pl-3 text-center">{t}</th>
   return (
     <Tarjeta titulo={`Manager Flash · ${fechaLarga(fecha)}`}
-      extra={<span className="text-xs text-slate-500">Día · mes a la fecha · año a la fecha, vs. mismo día del año anterior</span>}>
+      extra={<span className="text-xs text-neutral-500">Día · mes a la fecha · año a la fecha, vs. mismo día del año anterior</span>}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm tabular-nums">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-neutral-500">
             <tr>
               <th />
               {cab('Ocupación', 3)}{cab('ADR', 3)}{cab('RevPAR', 2)}{cab('Ingresos totales', 3)}

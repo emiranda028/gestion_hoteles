@@ -1,27 +1,36 @@
 @import "tailwindcss";
 
+/* Estética marriott.com: negro, rojo y blanco; tipografía grotesca tipo Swiss 721 / Helvetica */
 @theme {
-  --color-marca: #0f4c5c;
-  --color-marca-claro: #e6f0f2;
-  --color-acento: #e36414;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-marca: #1c1c1c;
+  --color-marca-claro: #f4f4f4;
+  --color-acento: #b5121b;
+  --font-sans: "Helvetica Neue", Helvetica, Arimo, Arial, sans-serif;
 }
 
 body {
-  background: #f5f7f8;
-  color: #0f172a;
+  background: #f4f4f4;
+  color: #1c1c1c;
+  font-feature-settings: "tnum" 0;
+}
+
+.titulo {
+  font-size: 1.625rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* los montos no se cortan en dos líneas */
+td.text-right, th.text-right { white-space: nowrap; }
+
 @media print {
   .no-imprimir { display: none !important; }
   body { background: white; }
-  .tarjeta { box-shadow: none !important; border-color: #cbd5e1 !important; break-inside: avoid; }
+  .tarjeta { box-shadow: none !important; border-color: #d4d4d4 !important; break-inside: avoid; }
   main { padding: 0 !important; max-width: none !important; }
 }
-
-/* los montos no se cortan en dos líneas */
-td.text-right, th.text-right { white-space: nowrap; }

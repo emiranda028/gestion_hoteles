@@ -68,7 +68,7 @@ export default function Pickup({ demo, hoteles, pickup, forecast, dias }: Props)
   }, [forecast, dias, hotel, horizonte])
 
   if (!conDatos.length) {
-    return <Tarjeta><p className="text-sm text-slate-500">Todavía no hay reportes de History & Forecast.</p></Tarjeta>
+    return <Tarjeta><p className="text-sm text-neutral-500">Todavía no hay reportes de History & Forecast.</p></Tarjeta>
   }
 
   return (
@@ -76,8 +76,8 @@ export default function Pickup({ demo, hoteles, pickup, forecast, dias }: Props)
       {demo && <AvisoDemo />}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Forecast y pick up</h1>
-          <p className="text-sm text-slate-500">On the books según el History & Forecast del {ultima && fechaLarga(ultima)}. Montos en USD.</p>
+          <h1 className="titulo">Forecast y pick up</h1>
+          <p className="text-sm text-neutral-500">On the books según el History & Forecast del {ultima && fechaLarga(ultima)}. Montos en USD.</p>
         </div>
         <Selector etiqueta="Hotel" valor={hotel} onChange={setHotel}
           opciones={conDatos.map((h) => ({ valor: h.id, texto: h.nombre }))} />
@@ -104,15 +104,15 @@ export default function Pickup({ demo, hoteles, pickup, forecast, dias }: Props)
         <div className="h-72">
           <ResponsiveContainer>
             <ComposedChart data={evolucion} margin={{ left: 0, right: 8 }}>
-              <CartesianGrid stroke="#eef2f4" vertical={false} />
+              <CartesianGrid stroke="#ececec" vertical={false} />
               <XAxis dataKey="etiqueta" tick={{ fontSize: 11 }} minTickGap={16} />
               <YAxis yAxisId="n" tick={{ fontSize: 11 }} width={50} />
               <YAxis yAxisId="p" orientation="right" tick={{ fontSize: 11 }} width={40} />
               <Tooltip formatter={(v) => entero(Number(v))} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar yAxisId="p" dataKey="pickup" name="Pick up del día" fill="#e36414" radius={[2, 2, 0, 0]} />
-              <Line yAxisId="n" dataKey="noches" name="Noches on the books" stroke="#0f4c5c" strokeWidth={2} dot={false} />
-              <Line yAxisId="n" dataKey="grupos" name="De grupos" stroke="#94a3b8" strokeDasharray="4 3" dot={false} />
+              <Bar yAxisId="p" dataKey="pickup" name="Pick up del día" fill="#b5121b" radius={[2, 2, 0, 0]} />
+              <Line yAxisId="n" dataKey="noches" name="Noches on the books" stroke="#1c1c1c" strokeWidth={2} dot={false} />
+              <Line yAxisId="n" dataKey="grupos" name="De grupos" stroke="#a3a3a3" strokeDasharray="4 3" dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -124,18 +124,18 @@ export default function Pickup({ demo, hoteles, pickup, forecast, dias }: Props)
         <div className="h-72">
           <ResponsiveContainer>
             <ComposedChart data={proximos} margin={{ left: 0, right: 8 }}>
-              <CartesianGrid stroke="#eef2f4" vertical={false} />
+              <CartesianGrid stroke="#ececec" vertical={false} />
               <XAxis dataKey="etiqueta" tick={{ fontSize: 10 }} minTickGap={8} />
               <YAxis unit="%" domain={[0, 100]} tick={{ fontSize: 11 }} width={40} />
               <Tooltip formatter={(v, n) => (n === 'ADR' ? dinero(Number(v), 'USD') : pct(Number(v)))} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="occ" name="Ocupación on the books" fill="#0f4c5c" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="grupos" name="De grupos" fill="#e36414" radius={[2, 2, 0, 0]} />
-              <Line dataKey="anterior" name="Real mismo día año anterior" stroke="#94a3b8" strokeWidth={2} dot={false} />
+              <Bar dataKey="occ" name="Ocupación on the books" fill="#1c1c1c" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="grupos" name="De grupos" fill="#b5121b" radius={[2, 2, 0, 0]} />
+              <Line dataKey="anterior" name="Real mismo día año anterior" stroke="#a3a3a3" strokeWidth={2} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-neutral-500">
           La comparación usa el mismo día de la semana del año anterior (364 días antes).
         </p>
       </Tarjeta>

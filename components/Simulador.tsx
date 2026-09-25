@@ -79,28 +79,28 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Simulador de gestión hotelera</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="titulo">Simulador de gestión hotelera</h1>
+          <p className="text-sm text-neutral-500">
             Cuánto cuesta que operemos el hotel y cuánto gana el propietario con nuestra gestión.
           </p>
         </div>
         <div className="no-imprimir flex flex-wrap items-center gap-2">
           {referencias.length > 0 && (
             <select defaultValue="" onChange={(ev) => { precargar(ev.target.value); ev.target.value = '' }}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+              className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm">
               <option value="" disabled>Precargar con un hotel de la cartera…</option>
               {referencias.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
             </select>
           )}
           {Object.keys(guardadas).length > 0 && (
             <select defaultValue="" onChange={(ev) => { const g = guardadas[ev.target.value]; if (g) setE(g); ev.target.value = '' }}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm">
+              className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm">
               <option value="" disabled>Abrir propuesta guardada…</option>
               {Object.keys(guardadas).map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           )}
           <button type="button" onClick={guardar} className="rounded-md border border-marca px-3 py-1.5 text-sm text-marca hover:bg-marca-claro">Guardar</button>
-          <button type="button" onClick={() => setE(ENTRADA_INICIAL)} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">Reiniciar</button>
+          <button type="button" onClick={() => setE(ENTRADA_INICIAL)} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100">Reiniciar</button>
           <button type="button" onClick={() => window.print()} className="rounded-md bg-marca px-3 py-1.5 text-sm text-white hover:opacity-90">Imprimir / PDF</button>
         </div>
       </div>
@@ -110,12 +110,12 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
         <div className="no-imprimir space-y-4">
           <Tarjeta titulo="Hotel a operar">
             <div className="space-y-3">
-              <label className="flex flex-col gap-1 text-xs text-slate-600">
+              <label className="flex flex-col gap-1 text-xs text-neutral-600">
                 Nombre
                 <input value={e.nombre} onChange={(ev) => setE({ ...e, nombre: ev.target.value })}
-                  className="rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm" />
               </label>
-              <div className="flex items-center justify-between text-xs text-slate-600">
+              <div className="flex items-center justify-between text-xs text-neutral-600">
                 Moneda
                 <Segmentado valor={e.moneda} onChange={(v) => setE({ ...e, moneda: v })}
                   opciones={[{ valor: 'USD', texto: 'USD' }, { valor: 'ARS', texto: 'ARS' }]} />
@@ -170,7 +170,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
               <Campo etiqueta="Crecimiento anual" sufijo="%" paso={0.5} valor={e.mejora.crecimientoAnual} onChange={me('crecimientoAnual')}
                 ayuda="Aumento anual de tarifas y cargos fijos, en la moneda elegida" />
             </div>
-            <div className="mt-3 text-xs text-slate-600">Rampa de mejora (% alcanzado por año)</div>
+            <div className="mt-3 text-xs text-neutral-600">Rampa de mejora (% alcanzado por año)</div>
             <div className="mt-1 grid grid-cols-5 gap-1">
               {e.mejora.rampa.map((r, i) => (
                 <Campo key={i} etiqueta={`A${i + 1}`} valor={r} max={100}
@@ -192,7 +192,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
         <div className="min-w-0 space-y-4">
           <div className="hidden print:block">
             <h2 className="text-lg font-semibold">Propuesta de gestión · {e.nombre}</h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-neutral-600">
               {e.operacion.habitaciones} habitaciones · ocupación actual {pct(e.operacion.ocupacion)} · ADR {dinero(e.operacion.adr, m)} ·
               honorarios: {decimal(e.contrato.feeBasePct, 2)}% de ingresos + {decimal(e.contrato.feeIncentivoPct)}% del GOP
               {e.contrato.feeMinimoMensual ? ` (mínimo ${dinero(e.contrato.feeMinimoMensual, m)}/mes)` : ''} ·
@@ -221,21 +221,21 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
             <div className="h-72">
               <ResponsiveContainer>
                 <ComposedChart data={grafico} margin={{ left: 0, right: 8 }}>
-                  <CartesianGrid stroke="#eef2f4" vertical={false} />
+                  <CartesianGrid stroke="#ececec" vertical={false} />
                   <XAxis dataKey="anio" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} width={70} tickFormatter={(v: number) => dinero(v, m, true)} />
                   <Tooltip formatter={(v) => dinero(Number(v), m)} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="actual" name="Resultado dueño hoy" fill="#94a3b8" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="gestion" name="Resultado dueño con gestión" fill="#0f4c5c" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="honorarios" name="Nuestros honorarios" fill="#e36414" radius={[3, 3, 0, 0]} />
-                  <Line dataKey="acumulado" name="Ganancia extra acumulada" stroke="#16a34a" strokeWidth={2} />
+                  <Bar dataKey="actual" name="Resultado dueño hoy" fill="#a3a3a3" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="gestion" name="Resultado dueño con gestión" fill="#1c1c1c" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="honorarios" name="Nuestros honorarios" fill="#b5121b" radius={[3, 3, 0, 0]} />
+                  <Line dataKey="acumulado" name="Ganancia extra acumulada" stroke="#525252" strokeWidth={2} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-sm tabular-nums">
-                <thead className="text-left text-xs uppercase text-slate-500">
+                <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
                     <th className="py-1 pr-3">Año</th>
                     <th className="py-1 pr-3 text-right">Ocupación</th>
@@ -252,7 +252,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
                   {anios.map((x) => {
                     const occ = (100 * x.gestion.nochesVendidas) / x.gestion.nochesDisponibles
                     return (
-                      <tr key={x.anio} className="border-t border-slate-100">
+                      <tr key={x.anio} className="border-t border-neutral-100">
                         <td className="py-1.5 pr-3">{x.anio}</td>
                         <td className="py-1.5 pr-3 text-right">{pct(occ)}</td>
                         <td className="py-1.5 pr-3 text-right">{dinero(x.gestion.ingHab / x.gestion.nochesVendidas, m)}</td>
@@ -261,13 +261,13 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
                         <td className="py-1.5 pr-3 text-right">{dinero(x.gestion.honorarios, m)}</td>
                         <td className="py-1.5 pr-3 text-right">{dinero(x.actual.noi, m)}</td>
                         <td className="py-1.5 pr-3 text-right font-medium">{dinero(x.gestion.noi, m)}</td>
-                        <td className={`py-1.5 text-right ${x.acumuladoDueno < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{dinero(x.acumuladoDueno, m)}</td>
+                        <td className={`py-1.5 text-right ${x.acumuladoDueno < 0 ? 'text-acento' : 'text-emerald-700'}`}>{dinero(x.acumuladoDueno, m)}</td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-neutral-500">
                 Total de honorarios en {e.anios} años (incluye transición): {dinero(honorarios5, m)} · ganancia extra acumulada del
                 propietario: {dinero(ganancia5, m)}.
               </p>
@@ -277,7 +277,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
           <div className="grid gap-4 xl:grid-cols-2">
             <Tarjeta titulo="Comparación de modalidades (año en régimen)">
               <table className="w-full text-sm tabular-nums">
-                <thead className="text-left text-xs uppercase text-slate-500">
+                <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
                     <th className="py-1 pr-3">Modalidad</th>
                     <th className="py-1 pr-3 text-right">Operadora</th>
@@ -286,13 +286,13 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
                 </thead>
                 <tbody>
                   {modalidades.map((x) => (
-                    <tr key={x.id} className="border-t border-slate-100 align-top">
+                    <tr key={x.id} className="border-t border-neutral-100 align-top">
                       <td className="py-2 pr-3">
-                        <div className="font-medium text-slate-800">{x.nombre}</div>
-                        <div className="text-xs text-slate-500">Riesgo: {x.riesgo}</div>
+                        <div className="font-medium text-neutral-800">{x.nombre}</div>
+                        <div className="text-xs text-neutral-500">Riesgo: {x.riesgo}</div>
                       </td>
-                      <td className={`py-2 pr-3 text-right ${x.ingresoOperadora < 0 ? 'text-red-600' : ''}`}>{dinero(x.ingresoOperadora, m)}</td>
-                      <td className={`py-2 text-right ${x.resultadoDueno < 0 ? 'text-red-600' : ''}`}>{dinero(x.resultadoDueno, m)}</td>
+                      <td className={`py-2 pr-3 text-right ${x.ingresoOperadora < 0 ? 'text-acento' : ''}`}>{dinero(x.ingresoOperadora, m)}</td>
+                      <td className={`py-2 text-right ${x.resultadoDueno < 0 ? 'text-acento' : ''}`}>{dinero(x.resultadoDueno, m)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -306,17 +306,17 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
               <div className="overflow-x-auto">
               <table className="w-full text-xs tabular-nums">
                 <thead>
-                  <tr className="text-slate-500">
+                  <tr className="text-neutral-500">
                     <th className="py-1 pr-2 text-left font-normal">Ocup. \ ADR</th>
                     {PASOS_ADR.map((a) => <th key={a} className="py-1 pl-3 text-right font-normal">{a > 0 ? '+' : ''}{a}%</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {PASOS_OCC.map((o, i) => (
-                    <tr key={o} className="border-t border-slate-100">
-                      <td className="py-1.5 pr-2 text-slate-500">{o > 0 ? '+' : ''}{o} pts</td>
+                    <tr key={o} className="border-t border-neutral-100">
+                      <td className="py-1.5 pr-2 text-neutral-500">{o > 0 ? '+' : ''}{o} pts</td>
                       {sens[i].map((v, j) => (
-                        <td key={j} className={`py-1.5 pl-3 text-right ${o === 0 && PASOS_ADR[j] === 0 ? 'font-semibold text-marca' : ''} ${v < 0 ? 'text-red-600' : ''}`}>
+                        <td key={j} className={`py-1.5 pl-3 text-right ${o === 0 && PASOS_ADR[j] === 0 ? 'font-semibold text-marca' : ''} ${v < 0 ? 'text-acento' : ''}`}>
                           {dinero(v, m, true)}
                         </td>
                       ))}
@@ -325,26 +325,26 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
                 </tbody>
               </table>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Variaciones sobre el escenario con gestión en régimen.</p>
+              <p className="mt-2 text-xs text-neutral-500">Variaciones sobre el escenario con gestión en régimen.</p>
             </Tarjeta>
           </div>
 
           {Object.keys(guardadas).length > 0 && (
             <Tarjeta titulo="Propuestas guardadas en este navegador" className="no-imprimir">
-              <ul className="divide-y divide-slate-100 text-sm">
+              <ul className="divide-y divide-neutral-100 text-sm">
                 {Object.entries(guardadas).map(([n, g]) => {
                   const r = proyeccionAnual(g)
                   const reg = r[Math.min(2, r.length - 1)]
                   return (
                     <li key={n} className="flex flex-wrap items-center justify-between gap-2 py-2">
                       <span className="font-medium">{n}</span>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-neutral-500">
                         {g.operacion.habitaciones} hab. · honorarios {dinero(reg.gestion.honorarios, g.moneda)}/año ·
                         extra dueño {dinero(reg.gananciaDueno, g.moneda)}/año
                       </span>
                       <span className="flex gap-2">
                         <button type="button" className="text-marca underline" onClick={() => setE(g)}>Abrir</button>
-                        <button type="button" className="text-red-600 underline" onClick={() => borrar(n)}>Borrar</button>
+                        <button type="button" className="text-acento underline" onClick={() => borrar(n)}>Borrar</button>
                       </span>
                     </li>
                   )
@@ -383,7 +383,7 @@ function TablaResultados({ actual, gestion, moneda }: { actual: Resultado; gesti
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm tabular-nums">
-        <thead className="text-left text-xs uppercase text-slate-500">
+        <thead className="text-left text-xs uppercase text-neutral-500">
           <tr>
             <th className="py-1 pr-3">Concepto</th>
             <th className="py-1 pr-3 text-right">Hoy</th>
@@ -398,11 +398,11 @@ function TablaResultados({ actual, gestion, moneda }: { actual: Resultado; gesti
             const dif = y - x
             const mejor = costo ? dif < 0 : dif > 0
             return (
-              <tr key={k} className={`border-t border-slate-100 ${total ? 'font-semibold' : ''}`}>
+              <tr key={k} className={`border-t border-neutral-100 ${total ? 'font-semibold' : ''}`}>
                 <td className="py-1.5 pr-3">{nombre}</td>
                 <td className="py-1.5 pr-3 text-right">{f(x, t)}</td>
                 <td className="py-1.5 pr-3 text-right">{f(y, t)}</td>
-                <td className={`py-1.5 text-right ${dif === 0 ? 'text-slate-400' : mejor ? 'text-emerald-700' : 'text-red-600'}`}>
+                <td className={`py-1.5 text-right ${dif === 0 ? 'text-neutral-400' : mejor ? 'text-emerald-700' : 'text-acento'}`}>
                   {t === 'pct' ? `${dif > 0 ? '+' : ''}${decimal(dif)} pts` : f(dif, t)}
                 </td>
               </tr>

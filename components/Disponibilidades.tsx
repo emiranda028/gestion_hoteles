@@ -1,122 +1,116 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts'
 import type { CuentaBanco, Disponible, Grupo } from '@/lib/datos'
 import { sumarDias } from '@/lib/kpi'
 import { dinero, fechaCorta, fechaLarga, variacionTexto } from '@/lib/formato'
 import { AvisoDemo, Kpi, Segmentado, Selector, Tarjeta } from './ui'
+import { COLORES } from './colores'
 
-type Moneda = 'usd' | 'ars'
 type Props = { demo: boolean; grupos: Grupo[]; disponibles: Disponible[]; cuentas: CuentaBanco[] }
 
-/** Pasa un registro diario a la moneda elegida. Los dólares se toman por su monto original. */
-function valuar(d: Disponible, m: Moneda) {
-  const k = m === 'usd' ? 1 / d.tc : 1
-  const pesos = d.pesos * k
-  const dolares = m === 'usd' ? d.usd : d.usd * d.tc
-  const euros = d.eurArs * k
-  const disponible = pesos + dolares + euros
-  return {
-    f: d.f, pesos, dolares, euros, disponible, inversiones: d.inversiones * k, bancosPesos: d.bancosPesos * k,
-    cobros: d.cobros * k, pagos: d.pagos * k, proyectado: d.proyectado * k, total: disponible + d.proyectado * k, tc: d.tc,
-  }
-}
+// Montos tal cual los informa cada grupo: pesos en pesos, dólares y euros en su moneda.
+const SUMABLES = ['total', 'subtotal', 'monedaLocal', 'monedaExtranjera', 'usd', 'eur', 'bancosPesos', 'inversiones',
+  'cobros', 'cheques', 'pagos'] as const
 
-type Valuado = ReturnType<typeof valuar>
-
-function consolidar(xs: Valuado[]): Valuado {
+function consolidar(xs: Disponible[]): Disponible {
   const r = { ...xs[0] }
-  for (const k of ['pesos', 'dolares', 'euros', 'disponible', 'inversiones', 'bancosPesos', 'cobros', 'pagos', 'proyectado', 'total'] as const) {
-    r[k] = xs.reduce((s, x) => s + x[k], 0)
-  }
+  for (const k of SUMABLES) r[k] = xs.reduce((s, x) => s + x[k], 0)
   return r
 }
 
+const pesos = (v: number) => dinero(v, 'ARS', true)
+const euros = (v: number) => `€ ${Math.round(v).toLocaleString('es-AR')}`
+
 export default function Disponibilidades({ demo, grupos, disponibles, cuentas }: Props) {
-  const [grupo, setGrupo] = useState<string>('todos')
-  const [moneda, setMoneda] = useState<Moneda>('usd')
+  const [grupo, setGrupo] = useState<string>(grupos[0]?.id ?? 'todos')
   const [rango, setRango] = useState<'90' | '180' | '365'>('90')
-  const cod = moneda === 'usd' ? 'USD' : 'ARS'
 
   const serie = useMemo(() => {
     const ids = grupo === 'todos' ? grupos.map((g) => g.id) : [grupo]
-    const porFecha = new Map<string, Valuado[]>()
+    const porFecha = new Map<string, Disponible[]>()
     for (const d of disponibles) {
       if (!ids.includes(d.g)) continue
-      const l = porFecha.get(d.f)
-      if (l) l.push(valuar(d, moneda))
-      else porFecha.set(d.f, [valuar(d, moneda)])
+      porFecha.set(d.f, [...(porFecha.get(d.f) ?? []), d])
     }
-    // solo días en que informaron todos los grupos elegidos
     return [...porFecha].filter(([, l]) => l.length === ids.length).map(([, l]) => consolidar(l))
       .sort((a, b) => a.f.localeCompare(b.f))
-  }, [disponibles, grupos, grupo, moneda])
+  }, [disponibles, grupos, grupo])
 
   if (!serie.length) {
-    return <Tarjeta><p className="text-sm text-slate-500">Todavía no hay informes de disponibilidades.</p></Tarjeta>
+    return <Tarjeta><p className="text-sm text-neutral-500">Todavía no hay informes de disponibilidades.</p></Tarjeta>
   }
   const hoy = serie[serie.length - 1]
-  const hace = (n: number) => [...serie].reverse().find((x) => x.f <= sumarDias(hoy.f, -n))
-  const s7 = hace(7), s30 = hace(30)
-  const var7 = (k: keyof Valuado) => (s7 ? { texto: `${variacionTexto((Number(hoy[k]) - Number(s7[k])) / Math.abs(Number(s7[k]) || 1))} vs 7 días`, valor: Number(hoy[k]) - Number(s7[k]) } : undefined)
+  const s7 = [...serie].reverse().find((x) => x.f <= sumarDias(hoy.f, -7))
+  const v7 = (k: (typeof SUMABLES)[number]) =>
+    s7 ? { texto: `${variacionTexto((hoy[k] - s7[k]) / Math.abs(s7[k] || 1))} vs 7 días`, valor: hoy[k] - s7[k] } : undefined
   const desde = sumarDias(hoy.f, -Number(rango))
   const grafico = serie.filter((x) => x.f >= desde).map((x) => ({ ...x, etiqueta: fechaCorta(x.f) }))
   const ctas = cuentas.filter((c) => grupo === 'todos' || c.g === grupo)
-  const aUsd = (c: CuentaBanco) => (c.moneda === 'USD' ? c.original : c.ars / hoy.tc)
-  const valorCuenta = (c: CuentaBanco) => (moneda === 'usd' ? aUsd(c) : c.ars)
   const secciones = ['Bancos pesos', 'Moneda extranjera', 'Inversiones', 'Cobros proyectados', 'Pagos proyectados']
+  const unGrupo = grupo !== 'todos'
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {demo && <AvisoDemo />}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Disponibilidades</h1>
-          <p className="text-sm text-slate-500">
-            Informe del {fechaLarga(hoy.f)} · pesos convertidos al dólar BNA vendedor del día ($ {hoy.tc.toLocaleString('es-AR')})
+          <h1 className="titulo">Disponibilidades</h1>
+          <p className="text-sm text-neutral-500">
+            Informe del {fechaLarga(hoy.f)}, tal como lo envía el grupo
+            {unGrupo && hoy.tcUsd ? ` · tipo de cambio informado US$ 1 = $ ${hoy.tcUsd.toLocaleString('es-AR')}` : ''}
           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <Selector etiqueta="Grupo" valor={grupo} onChange={setGrupo}
-            opciones={[{ valor: 'todos', texto: 'Todos' }, ...grupos.map((g) => ({ valor: g.id, texto: g.nombre }))]} />
-          <Segmentado valor={moneda} onChange={setMoneda}
-            opciones={[{ valor: 'usd', texto: 'USD' }, { valor: 'ars', texto: 'ARS (BNA)' }]} />
-        </div>
+        <Selector etiqueta="Grupo" valor={grupo} onChange={setGrupo}
+          opciones={[...grupos.map((g) => ({ valor: g.id, texto: g.nombre })), { valor: 'todos', texto: 'Todos' }]} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Kpi titulo="Disponible" valor={dinero(hoy.disponible, cod, true)} variacion={var7('disponible')}
-          detalle={s30 ? `${variacionTexto((hoy.disponible - s30.disponible) / Math.abs(s30.disponible || 1))} vs 30 días` : undefined} />
-        <Kpi titulo="En dólares" valor={dinero(hoy.dolares, cod, true)} variacion={var7('dolares')} />
-        <Kpi titulo="Bancos en pesos" valor={dinero(hoy.bancosPesos, cod, true)} variacion={var7('bancosPesos')} />
-        <Kpi titulo="Inversiones (FCI)" valor={dinero(hoy.inversiones, cod, true)} variacion={var7('inversiones')} />
-        <Kpi titulo="Proyectado neto" valor={dinero(hoy.proyectado, cod, true)}
-          detalle={`cobros ${dinero(hoy.cobros, cod, true)} · pagos ${dinero(-hoy.pagos, cod, true)}`}
-          variacion={{ texto: hoy.proyectado >= 0 ? 'entra más de lo que sale' : 'sale más de lo que entra', valor: hoy.proyectado }} />
-        <Kpi titulo="Total con proyectados" valor={dinero(hoy.total, cod, true)} variacion={var7('total')} />
+        <Kpi titulo="Disponibilidades" valor={pesos(hoy.total)} variacion={v7('total')} detalle="incluye proyectados" />
+        <Kpi titulo="Moneda local" valor={pesos(hoy.monedaLocal)} variacion={v7('monedaLocal')} />
+        <Kpi titulo="Moneda extranjera" valor={dinero(hoy.usd, 'USD', true)} variacion={v7('usd')}
+          detalle={`${hoy.eur > 1 ? `+ ${euros(hoy.eur)} · ` : ''}valuada ${pesos(hoy.monedaExtranjera)}`} />
+        <Kpi titulo="Bancos en pesos" valor={pesos(hoy.bancosPesos)} variacion={v7('bancosPesos')} />
+        <Kpi titulo="Inversiones (FCI)" valor={pesos(hoy.inversiones)} variacion={v7('inversiones')} />
+        <Kpi titulo="Proyectado" valor={pesos(hoy.cobros + hoy.cheques + hoy.pagos)}
+          detalle={`cobros ${pesos(hoy.cobros)} · cheques ${pesos(Math.abs(hoy.cheques))} · pagos ${pesos(Math.abs(hoy.pagos))}`} />
       </div>
 
-      <Tarjeta titulo="Evolución del disponible"
-        extra={<Segmentado valor={rango} onChange={setRango}
-          opciones={[{ valor: '90', texto: '90 días' }, { valor: '180', texto: '6 meses' }, { valor: '365', texto: '1 año' }]} />}>
-        <div className="h-72">
-          <ResponsiveContainer>
-            <AreaChart data={grafico} margin={{ left: 0, right: 8 }}>
-              <CartesianGrid stroke="#eef2f4" vertical={false} />
-              <XAxis dataKey="etiqueta" tick={{ fontSize: 11 }} minTickGap={20} />
-              <YAxis tick={{ fontSize: 11 }} width={80} tickFormatter={(v: number) => dinero(v, cod, true)} />
-              <Tooltip formatter={(v) => dinero(Number(v), cod)} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area dataKey="dolares" stackId="d" name="Dólares" fill="#0f4c5c" stroke="#0f4c5c" fillOpacity={0.8} />
-              <Area dataKey="inversiones" stackId="d" name="Inversiones" fill="#e36414" stroke="#e36414" fillOpacity={0.7} />
-              <Area dataKey="bancosPesos" stackId="d" name="Bancos en pesos" fill="#94a3b8" stroke="#94a3b8" fillOpacity={0.7} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <p className="mt-2 text-xs text-slate-500">
-          En USD, los saldos en pesos se convierten con el BNA vendedor de cada día; los dólares se muestran por su monto original.
-        </p>
-      </Tarjeta>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Tarjeta titulo="Disponibilidades en pesos" className="lg:col-span-2"
+          extra={<Segmentado valor={rango} onChange={setRango}
+            opciones={[{ valor: '90', texto: '90 días' }, { valor: '180', texto: '6 meses' }, { valor: '365', texto: '1 año' }]} />}>
+          <div className="h-72">
+            <ResponsiveContainer>
+              <AreaChart data={grafico} margin={{ left: 0, right: 8 }}>
+                <CartesianGrid stroke={COLORES.grilla} vertical={false} />
+                <XAxis dataKey="etiqueta" tick={{ fontSize: 11 }} minTickGap={20} />
+                <YAxis tick={{ fontSize: 11 }} width={80} tickFormatter={(v: number) => pesos(v)} />
+                <Tooltip formatter={(v) => dinero(Number(v), 'ARS')} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Area dataKey="monedaExtranjera" stackId="d" name="Moneda extranjera (valuada)" fill={COLORES.principal} stroke={COLORES.principal} fillOpacity={0.85} />
+                <Area dataKey="inversiones" stackId="d" name="Inversiones" fill={COLORES.acento} stroke={COLORES.acento} fillOpacity={0.8} />
+                <Area dataKey="bancosPesos" stackId="d" name="Bancos en pesos" fill={COLORES.gris} stroke={COLORES.gris} fillOpacity={0.8} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Tarjeta>
+        <Tarjeta titulo="Dólares">
+          <div className="h-72">
+            <ResponsiveContainer>
+              <LineChart data={grafico} margin={{ left: 0, right: 8 }}>
+                <CartesianGrid stroke={COLORES.grilla} vertical={false} />
+                <XAxis dataKey="etiqueta" tick={{ fontSize: 11 }} minTickGap={20} />
+                <YAxis tick={{ fontSize: 11 }} width={70} tickFormatter={(v: number) => dinero(v, 'USD', true)} />
+                <Tooltip formatter={(v) => dinero(Number(v), 'USD')} />
+                <Line dataKey="usd" name="Dólares" stroke={COLORES.principal} strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Tarjeta>
+      </div>
 
       {ctas.length > 0 && (
         <Tarjeta titulo={`Detalle del último informe (${fechaLarga(ctas[0].f)})`}>
@@ -124,21 +118,27 @@ export default function Disponibilidades({ demo, grupos, disponibles, cuentas }:
             {secciones.map((sec) => {
               const filas = ctas.filter((c) => c.seccion === sec && Math.abs(c.ars) > 1)
               if (!filas.length) return null
-              const total = filas.reduce((s, c) => s + valorCuenta(c), 0)
+              const total = filas.reduce((s, c) => s + c.ars, 0)
+              const extranjera = sec === 'Moneda extranjera'
               return (
                 <div key={sec}>
-                  <h3 className="mb-1 flex justify-between text-sm font-semibold text-slate-700">
-                    <span>{sec}</span><span className="tabular-nums">{dinero(total, cod)}</span>
+                  <h3 className="mb-1 flex justify-between border-b-2 border-marca pb-1 text-sm font-semibold uppercase tracking-wide">
+                    <span>{sec}</span><span className="tabular-nums">{dinero(total, 'ARS')}</span>
                   </h3>
                   <table className="w-full text-sm tabular-nums">
                     <tbody>
-                      {filas.sort((a, b) => Math.abs(valorCuenta(b)) - Math.abs(valorCuenta(a))).map((c, i) => (
-                        <tr key={i} className="border-t border-slate-100">
+                      {filas.sort((a, b) => Math.abs(b.ars) - Math.abs(a.ars)).map((c, i) => (
+                        <tr key={i} className="border-t border-neutral-100">
                           <td className="py-1 pr-2">
                             {c.banco}
-                            <div className="text-[11px] text-slate-500">{[c.cuenta, c.empresa].filter(Boolean).join(' · ')}</div>
+                            <div className="text-[11px] text-neutral-500">{[c.cuenta, c.empresa].filter(Boolean).join(' · ')}</div>
                           </td>
-                          <td className={`py-1 text-right ${valorCuenta(c) < 0 ? 'text-red-600' : ''}`}>{dinero(valorCuenta(c), cod)}</td>
+                          {extranjera && (
+                            <td className="py-1 pr-3 text-right text-neutral-600">
+                              {c.moneda === 'EUR' ? euros(c.original) : dinero(c.original, 'USD')}
+                            </td>
+                          )}
+                          <td className={`py-1 text-right ${c.ars < 0 ? 'text-acento' : ''}`}>{dinero(c.ars, 'ARS')}</td>
                         </tr>
                       ))}
                     </tbody>

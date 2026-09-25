@@ -100,7 +100,8 @@ def main(desde=date(2024, 1, 1), hoy=date(2026, 9, 25)):
         me_ars = usd * t
         total = pesos + fci + me_ars + cobros - pagos
         for estado, concepto, moneda, tipo, imp in [
-            ("Real", "DISPONIBILIDADES", "Local", "ARS", total), ("Real", "Moneda extranjera", "Local", "ARS", me_ars),
+            ("Real", "DISPONIBILIDADES", "Local", "ARS", total), ("Real", "Moneda Local", "Local", "ARS", total - me_ars),
+            ("Real", "Moneda extranjera", "Local", "ARS", me_ars),
             ("Real", "Moneda extranjera", "Extranjera", "USD", usd), ("Real", "Tipo de cambio USD", "Local", "USD", t),
             ("Real", "Bancos pesos", "Local", "ARS", pesos), ("Real", "Inversiones", "Local", "ARS", fci),
             ("Proyectado", "Cobranzas Proyectadas", "Local", "ARS", cobros),

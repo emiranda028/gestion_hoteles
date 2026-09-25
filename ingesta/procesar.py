@@ -176,8 +176,15 @@ def _derivados_flash(hid: str, f: opera.Flash, hotel: dict) -> list[dict]:
 def _excel(nombre: str, contenido: bytes, config: dict, fecha: date | None) -> Resultado | None:
     from openpyxl import load_workbook
 
+    from . import paises
+
     hojas = load_workbook(io.BytesIO(contenido), read_only=True).sheetnames
     if not disponibilidades.es_planilla(hojas):
+        if paises.es_planilla(contenido):
+            filas = paises.leer(contenido)
+            paises.guardar(filas)
+            return Resultado(nombre, "Huéspedes por país", True, paises.HOTEL, max(f["mes"] for f in filas),
+                             detalle=f"{len(filas)} filas")
         return None  # otros Excel (conversiones manuales, etc.) no se usan
     d = disponibilidades.leer(contenido)
     grupo = grupo_por_empresa(d.empresa, config)

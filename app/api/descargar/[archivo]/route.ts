@@ -9,6 +9,7 @@ const ARCHIVOS: Record<string, string> = {
   'pickup.csv': 'text/csv; charset=utf-8',
   'disponibilidades.csv': 'text/csv; charset=utf-8',
   'tipo_cambio.csv': 'text/csv; charset=utf-8',
+  'paises.csv': 'text/csv; charset=utf-8',
   'hoteles.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 

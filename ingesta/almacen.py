@@ -8,6 +8,7 @@ Tablas (todas en data/):
   disponibilidades.csv  saldos resumidos por grupo y día (mismo esquema que "Disponibilidades PBI")
   bancos.csv            detalle por cuenta bancaria / inversión / caja
   tipo_cambio.csv       dólar BNA vendedor por día
+  paises.csv            huéspedes por país y mes (Marriott BA)
 """
 from __future__ import annotations
 
@@ -181,6 +182,11 @@ def exportar_excel(hoteles: list[dict]) -> None:
     for f in leer("disponibilidades"):
         ws.append([d(f["fecha"]), f["estado"], f["concepto"], f["moneda"], f["tipo_moneda"], n(f["importe"]),
                    f["grupo"]])
+
+    ws = wb.create_sheet("Países")
+    ws.append(["Mes", "PAÍS", "Continente", "Huéspedes", "Empresa"])
+    for f in leer("paises"):
+        ws.append([f["mes"], f["pais"], f["continente"], n(f["huespedes"]), base.get(f["hotel"], f["hotel"])])
 
     ws = wb.create_sheet("Tipo de cambio")
     ws.append(["Fecha", "BNA vendedor"])

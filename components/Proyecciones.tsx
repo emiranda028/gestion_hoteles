@@ -20,6 +20,7 @@ const METRICAS: { valor: Metrica; texto: string }[] = [
 export default function Proyecciones({ datos }: { datos: Datos }) {
   const [hotel, setHotel] = useState(datos.hoteles[0]?.id ?? '')
   const moneda = 'usd' as const
+  const activos = useMemo(() => new Set(datos.hoteles.filter((h) => h.activo).map((h) => h.id)), [datos.hoteles])
   const [horizonte, setHorizonte] = useState('12')
   const [metrica, setMetrica] = useState<Metrica>('occ')
   const [escenarios, setEscenarios] = useState<Escenario[]>(ESCENARIOS_BASE)
@@ -27,8 +28,8 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
   const cod = 'USD'
 
   const hist = useMemo(
-    () => historicoMensual(datos.dias.filter((d) => hotel === 'todos' || d.h === hotel), moneda),
-    [datos.dias, hotel, moneda],
+    () => historicoMensual(datos.dias.filter((d) => (hotel === 'todos' ? activos.has(d.h) : d.h === hotel)), moneda),
+    [datos.dias, hotel, moneda, activos],
   )
   const estimados = useMemo(() => estimarSupuestos(hist), [hist])
   const supuestos = {
@@ -76,8 +77,8 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
       {datos.demo && <AvisoDemo />}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Proyecciones y escenarios</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="titulo">Proyecciones y escenarios</h1>
+          <p className="text-sm text-neutral-500">
             Estacionalidad del mismo mes de años anteriores + tendencia reciente + ajuste de cada escenario.
           </p>
         </div>
@@ -90,7 +91,7 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
       </div>
 
       {hist.length < 3 ? (
-        <Tarjeta><p className="text-sm text-slate-500">Se necesitan al menos 3 meses de historia para proyectar.</p></Tarjeta>
+        <Tarjeta><p className="text-sm text-neutral-500">Se necesitan al menos 3 meses de historia para proyectar.</p></Tarjeta>
       ) : (
         <>
           <div className="grid gap-4 lg:grid-cols-4">
@@ -103,13 +104,13 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
                   valor={Math.round(supuestos.crecimientoAdr * 1000) / 10}
                   onChange={(v) => setAjustes({ ...ajustes, crecimientoAdr: v / 100 })}
                   ayuda="ADR de los últimos 12 meses contra los 12 anteriores, en la moneda elegida" />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-neutral-500">
                   Habitaciones disponibles por día: {entero(supuestos.dispDia)} · Otros ingresos:{' '}
                   {pct(supuestos.ratioOtros * 100)} de habitaciones.
                 </p>
                 <button type="button" onClick={() => setAjustes({})}
                   className="text-xs text-marca underline">Volver a los valores estimados</button>
-                <hr className="border-slate-100" />
+                <hr className="border-neutral-100" />
                 {escenarios.map((e, i) => (
                   <div key={e.id}>
                     <div className="mb-1 text-xs font-semibold" style={{ color: e.color }}>{e.nombre}</div>
@@ -127,13 +128,13 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
               <div className="h-80">
                 <ResponsiveContainer>
                   <ComposedChart data={grafico} margin={{ left: 0, right: 8 }}>
-                    <CartesianGrid stroke="#eef2f4" vertical={false} />
+                    <CartesianGrid stroke="#ececec" vertical={false} />
                     <XAxis dataKey="etiqueta" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} width={70} domain={metrica === 'occ' ? [0, 100] : ['auto', 'auto']}
                       tickFormatter={(v: number) => (metrica === 'occ' ? `${v}%` : dinero(v, cod, true))} />
                     <Tooltip formatter={(v) => fmt(Number(v))} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line dataKey="real" name="Real" stroke="#0f172a" strokeWidth={2.5} dot={false} />
+                    <Line dataKey="real" name="Real" stroke="#1c1c1c" strokeWidth={2.5} dot={false} />
                     {escenarios.map((e) => (
                       <Line key={e.id} dataKey={e.id} name={e.nombre} stroke={e.color} strokeWidth={2}
                         strokeDasharray={e.id === 'base' ? undefined : '5 4'} dot={false} />
@@ -143,10 +144,10 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {totales.map((t) => (
-                  <div key={t.e.id} className="rounded-lg border border-slate-200 p-3">
+                  <div key={t.e.id} className="rounded-lg border border-neutral-200 p-3">
                     <div className="text-xs font-semibold" style={{ color: t.e.color }}>{t.e.nombre} · {horizonte} meses</div>
                     <div className="mt-1 text-lg font-semibold tabular-nums">{dinero(t.ingTot, cod, true)}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-neutral-500">
                       Ocupación {pct(t.occ)} · ADR {dinero(t.adr, cod)} · {entero(t.noches)} noches
                     </div>
                   </div>
@@ -158,7 +159,7 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
           <Tarjeta titulo="Detalle mensual proyectado">
             <div className="overflow-x-auto">
               <table className="w-full text-sm tabular-nums">
-                <thead className="text-left text-xs uppercase text-slate-500">
+                <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
                     <th className="py-2 pr-4">Mes</th>
                     {escenarios.map((e) => (
@@ -174,7 +175,7 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
                 </thead>
                 <tbody>
                   {[...new Set(proy.map((p) => p.mes))].map((mes) => (
-                    <tr key={mes} className="border-t border-slate-100">
+                    <tr key={mes} className="border-t border-neutral-100">
                       <td className="py-1.5 pr-4 font-medium">{mesCorto(mes)}</td>
                       {escenarios.map((e) => {
                         const p = proy.find((x) => x.mes === mes && x.escenario === e.id)!

@@ -4,9 +4,9 @@ import { type Dia, type Moneda, agregar, agrupar, diasDelMes, mesDe, sumarMeses 
 export type Escenario = { id: string; nombre: string; deltaOcc: number; deltaAdr: number; color: string }
 
 export const ESCENARIOS_BASE: Escenario[] = [
-  { id: 'pesimista', nombre: 'Pesimista', deltaOcc: -6, deltaAdr: -8, color: '#dc2626' },
-  { id: 'base', nombre: 'Base', deltaOcc: 0, deltaAdr: 0, color: '#2563eb' },
-  { id: 'optimista', nombre: 'Optimista', deltaOcc: 5, deltaAdr: 6, color: '#16a34a' },
+  { id: 'pesimista', nombre: 'Pesimista', deltaOcc: -6, deltaAdr: -8, color: '#a3a3a3' },
+  { id: 'base', nombre: 'Base', deltaOcc: 0, deltaAdr: 0, color: '#b5121b' },
+  { id: 'optimista', nombre: 'Optimista', deltaOcc: 5, deltaAdr: 6, color: '#525252' },
 ]
 
 export type MesHistorico = { mes: string; occ: number; adr: number; dispDia: number; ratioOtros: number; ingHab: number; ingTot: number }

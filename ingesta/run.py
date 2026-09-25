@@ -6,6 +6,7 @@ Uso:
                                                       # procesa PDFs / ZIPs / Excel de una carpeta
   python -m ingesta.run inspeccionar ARCHIVO          # muestra qué se lee de un archivo, sin guardar nada
   python -m ingesta.run historico HF.xlsb             # importa la base histórica de Power BI
+  python -m ingesta.run paises Venta_x_PAIS.xlsx      # huéspedes por país (Marriott BA)
 """
 from __future__ import annotations
 
@@ -51,6 +52,9 @@ def _imprimir(resultados: list[Resultado]) -> int:
 
 
 def _cerrar(config: dict, resultados: list[Resultado]) -> int:
+    from .normalizar import normalizar
+
+    normalizar()  # registros en pesos -> dólares
     _guardar_estado(resultados)
     almacen.exportar_excel(config["hoteles"])
     return _imprimir(resultados)
@@ -130,10 +134,24 @@ def cmd_historico(args) -> int:
     from .historico import importar
 
     config = cargar_config()
+    from .normalizar import main as normalizar
+
     cuenta = importar(args.archivo, config)
     for tabla, n in cuenta.items():
         print(f"  {tabla:18s} {n:7d} filas")
+    normalizar()
     almacen.exportar_excel(config["hoteles"])
+    return 0
+
+
+def cmd_paises(args) -> int:
+    from . import paises
+
+    filas = paises.leer(Path(args.archivo).read_bytes())
+    paises.guardar(filas)
+    meses = sorted({f["mes"] for f in filas})
+    print(f"Huéspedes por país: {len(filas)} filas, {meses[0]} a {meses[-1]}")
+    almacen.exportar_excel(cargar_config()["hoteles"])
     return 0
 
 
@@ -152,6 +170,9 @@ def main(argv=None) -> int:
     h = sub.add_parser("historico")
     h.add_argument("archivo")
     h.set_defaults(fn=cmd_historico)
+    pa = sub.add_parser("paises")
+    pa.add_argument("archivo")
+    pa.set_defaults(fn=cmd_paises)
     args = p.parse_args(argv)
     return args.fn(args)
 

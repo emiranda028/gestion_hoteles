@@ -38,7 +38,9 @@ def main() -> int:
     almacen.escribir("tipo_cambio", almacen.TC_COLS,
                      [{"fecha": f, "ars_por_usd": f"{v:.2f}"} for f, v in sorted(serie.items())])
     print(f"tipo_cambio.csv: {len(serie)} días ({respaldo} tomados de la planilla de Numah)")
-    return 0
+    from .normalizar import main as normalizar
+
+    return normalizar()  # con más cotizaciones se pueden convertir registros viejos en pesos
 
 
 if __name__ == "__main__":
