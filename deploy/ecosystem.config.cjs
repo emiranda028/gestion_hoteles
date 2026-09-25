@@ -16,7 +16,8 @@ module.exports = {
     name: 'gestion-hoteles',
     cwd: path.join(__dirname, '..'),
     script: 'node_modules/next/dist/bin/next',
-    args: `start -p ${env.PORT || 3000}`,
+    // solo accesible desde el propio servidor: al público se llega por nginx (https)
+    args: `start -H ${env.HOST || '127.0.0.1'} -p ${env.PORT || 3000}`,
     env,
     max_memory_restart: '600M',
   }],
