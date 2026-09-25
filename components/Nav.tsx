@@ -81,8 +81,8 @@ export default function Nav({ usuario, verPaises }: { usuario: { nombre: string;
     .find((l) => esActivo(ruta, l.href))
 
   return (
-    <header className="no-imprimir sticky top-0 z-20 bg-marca text-white shadow-[0_1px_0_rgba(255,255,255,0.06)]">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-5 px-4 sm:px-6 lg:h-16">
+    <header className="no-imprimir sticky top-0 z-20 bg-marca pt-[env(safe-area-inset-top)] text-white shadow-[0_1px_0_rgba(255,255,255,0.06)]">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:px-6 lg:h-16">
         <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Inicio">
           <IconoLtelc className="h-8 w-8 text-white" fondo={false} />
           <span className="text-base font-bold leading-tight tracking-tight">Gestión Hotelera</span>
@@ -140,7 +140,7 @@ export default function Nav({ usuario, verPaises }: { usuario: { nombre: string;
       {abierto && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
           <button className="absolute inset-0 bg-black/50" aria-label="Cerrar menú" onClick={() => setAbierto(false)} />
-          <div className="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col overflow-y-auto bg-marca pb-[env(safe-area-inset-bottom)] shadow-2xl">
+          <div className="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col overflow-y-auto bg-marca pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-acento font-bold">
