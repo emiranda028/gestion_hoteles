@@ -107,3 +107,51 @@ export async function cambiarMiPassword(_: EstadoPassword, form: FormData): Prom
   guardarUsuarios(leerUsuarios().map((x) => (x.usuario === yo.usuario ? cambiarPassword(x, nueva) : x)))
   return { ok: 'Contraseña actualizada.' }
 }
+
+/** Cuadro de disponibilidades (ARS / EUR / USD) de un grupo y fecha, solo si el usuario puede ver ese grupo. */
+export async function verCuadroDisponibilidades(grupo: string, fecha: string) {
+  const u = await requerirUsuario()
+  if (!u.grupos.includes('*') && !u.grupos.includes(grupo)) return []
+  const { cuadroDisponibilidades } = await import('@/lib/datos')
+  return cuadroDisponibilidades(grupo, fecha)
+}
+
+export type EstadoFoto = { ok?: string; error?: string }
+
+/** Sube (o reemplaza) la foto de un hotel para la portada del login. */
+export async function guardarFotoPortada(_: EstadoFoto, form: FormData): Promise<EstadoFoto> {
+  await requerirAdmin()
+  const { HOTELES_PORTADA, CARPETA_PORTADA, rutaFoto } = await import('@/lib/portada')
+  const hotel = String(form.get('hotel') ?? '')
+  const archivo = form.get('foto')
+  if (!HOTELES_PORTADA.some((h) => h.id === hotel)) return { error: 'Hotel desconocido' }
+  if (!(archivo instanceof File) || !archivo.size) return { error: 'Elegí una foto' }
+  if (!/^image\/(jpeg|png|webp)$/.test(archivo.type)) return { error: 'La foto tiene que ser JPG, PNG o WEBP' }
+  if (archivo.size > 15 * 1024 * 1024) return { error: 'La foto pesa más de 15 MB' }
+  const { mkdir, writeFile } = await import('node:fs/promises')
+  await mkdir(CARPETA_PORTADA, { recursive: true })
+  let bytes: Buffer = Buffer.from(await archivo.arrayBuffer())
+  try {
+    // se achica y se pasa a JPG para que la portada cargue rápido también en el celular
+    const sharp = (await import('sharp')).default
+    bytes = await sharp(bytes).rotate().resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80, mozjpeg: true }).toBuffer()
+  } catch {
+    if (archivo.type !== 'image/jpeg') return { error: 'No se pudo convertir la foto: subila en JPG' }
+  }
+  await writeFile(rutaFoto(hotel), bytes)
+  revalidatePath('/login')
+  revalidatePath('/datos')
+  return { ok: 'Foto guardada' }
+}
+
+export async function borrarFotoPortada(form: FormData) {
+  await requerirAdmin()
+  const { HOTELES_PORTADA, rutaFoto } = await import('@/lib/portada')
+  const hotel = String(form.get('hotel') ?? '')
+  if (!HOTELES_PORTADA.some((h) => h.id === hotel)) return
+  const { rm } = await import('node:fs/promises')
+  await rm(rutaFoto(hotel), { force: true })
+  revalidatePath('/login')
+  revalidatePath('/datos')
+}

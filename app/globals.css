@@ -55,7 +55,16 @@ a:hover > .ltelc-hover .p, .ltelc-hover:hover .p { margin-right: 0.3em; }
 a:hover > .ltelc-hover .p:last-child, .ltelc-hover:hover .p:last-child { margin-right: 0; }
 a:hover > .ltelc-hover .r, .ltelc-hover:hover .r { max-width: 6em; opacity: 1; }
 
+/* portada del login: acercamiento lento de la foto */
+.portada-zoom { animation: portada-zoom 7s ease-out forwards; }
+@keyframes portada-zoom { from { transform: scale(1.08); } to { transform: scale(1); } }
+
+/* la idea (punto rojo del isotipo) aparece después de que la frase se junta en LTELC */
+.ltelc-logo-animado .ltelc-idea { transform-box: fill-box; transform-origin: center; animation: ltelc-idea 0.5s cubic-bezier(.3,1.6,.5,1) 2.7s both; }
+@keyframes ltelc-idea { from { transform: scale(0); } to { transform: scale(1); } }
+
 @media (prefers-reduced-motion: reduce) {
+  .portada-zoom, .ltelc-logo-animado .ltelc-idea { animation: none; }
   .ltelc-animado .p { opacity: 1; margin-right: 0; animation: none; }
   .ltelc-animado .r { max-width: 0; opacity: 0; animation: none; }
 }

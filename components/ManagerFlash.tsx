@@ -86,8 +86,8 @@ export default function ManagerFlash({ demo, hoteles, flashDias }: { demo: boole
                   {PERIODOS.map(([, p]) => {
                     const act = fila.v(valores(d, p))
                     return (
-                      <td key={p} className="py-3 text-center">
-                        <div className="text-base font-semibold">{fila.fmt(act)}</div>
+                      <td key={p} className="px-0.5 py-3 text-center sm:px-1">
+                        <div className="whitespace-nowrap text-[13px] font-semibold sm:text-base">{fila.fmt(act)}</div>
                         <Var act={act} ant={ant ? fila.v(valores(ant, p)) : undefined} puntos={fila.puntos} />
                       </td>
                     )

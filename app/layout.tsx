@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { FirmaLtelc } from '@/components/LogoLtelc'
 import Nav from '@/components/Nav'
 import { usuarioActual } from '@/lib/usuarios'
@@ -10,6 +10,15 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Gestión Hotelera · LTELC BI',
   description: 'Tablero de indicadores, forecast, disponibilidades y simulador de gestión hotelera. Hecho por LTELC BI.',
+  applicationName: 'Hoteles LTELC',
+  appleWebApp: { capable: true, title: 'Hoteles LTELC', statusBarStyle: 'black-translucent' },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#1c1c1c',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -25,13 +34,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="flex min-h-screen flex-col antialiased">
         <Nav usuario={u ? { nombre: u.nombre, admin: u.rol === 'admin' } : null} verPaises={verPaises} />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-        <footer className="no-imprimir border-t border-neutral-200 bg-white">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-neutral-500 sm:px-6">
-            <span>Gestión Hotelera</span>
-            <FirmaLtelc />
-          </div>
-        </footer>
+        {u ? (
+          <>
+            <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">{children}</main>
+            <footer className="no-imprimir border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)]">
+              <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-neutral-500 sm:px-6">
+                <span>Gestión Hotelera</span>
+                <FirmaLtelc />
+              </div>
+            </footer>
+          </>
+        ) : (
+          children /* portada del login: pantalla completa */
+        )}
       </body>
     </html>
   )

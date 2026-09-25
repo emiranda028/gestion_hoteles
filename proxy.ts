@@ -4,7 +4,7 @@ import { COOKIE, leerToken } from './lib/sesion'
 // Todas las páginas requieren haber ingresado; /admin además requiere rol administrador.
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl
-  if (pathname === '/login') return NextResponse.next()
+  if (pathname === '/login' || pathname.startsWith('/portada/')) return NextResponse.next()
   const sesion = leerToken(req.cookies.get(COOKIE)?.value)
   if (!sesion) {
     if (pathname.startsWith('/api/')) return new NextResponse('No autorizado', { status: 401 })
@@ -20,5 +20,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|ico|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|ico|webp)$).*)'],
 }

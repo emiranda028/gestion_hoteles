@@ -57,6 +57,8 @@ export type CuentaBanco = {
   g: string; f: string; seccion: string; empresa: string; banco: string; cuenta: string
   moneda: string; ars: number; original: number
 }
+// Una fila del cuadro de disponibilidades: concepto con su importe en pesos, euros y dólares
+export type FilaDisponible = { concepto: string; ars: number | null; eur: number | null; usd: number | null }
 export type EstadoIngesta = {
   ejecutado: string
   archivos: { origen: string; tipo: string; hotel: string | null; fecha: string | null; ok: boolean; detalle?: string; avisos: string[] }[]
@@ -92,7 +94,7 @@ const ARCHIVOS = ['hf.csv', 'flash.csv', 'pickup.csv', 'bonvoy.csv', 'disponibil
 /** Firma de los archivos de datos: cambia cada vez que la ingesta escribe algo. */
 function firmaDatos() {
   return ARCHIVOS.map((a) => {
-    try { return statSync(/*turbopackIgnore: true*/ path.join(DATA, a)).mtimeMs } catch { return 0 }
+    try { return statSync(path.join(/*turbopackIgnore: true*/ DATA, a)).mtimeMs } catch { return 0 }
   }).join('|')
 }
 let firmaCache = ''
@@ -125,6 +127,23 @@ function anioAntes(f: string) {
 }
 
 let cache: Datos | null = null
+let bloquesDisp = new Map<string, Record<string, string>[]>()
+
+const CONCEPTOS_CUADRO = ['Bancos pesos', 'Bancos dólares', 'Inversiones', 'Efectivo - Tesorería', 'Efectivo - Recaudación',
+  'Efectivo - Seguridad', 'Cobranzas Proyectadas', 'Aportes socios', 'Cheques emitidos', 'Pagos programados', 'DISPONIBILIDADES']
+
+/** Cuadro de disponibilidades de un grupo y fecha, como en Power BI: ARS (local), EUR y USD (moneda original). */
+export function cuadroDisponibilidades(g: string, f: string): FilaDisponible[] {
+  cargarDatos()
+  const filas = bloquesDisp.get(`${g}|${f}`) ?? []
+  const suma = (concepto: string, moneda: string, tipo: string) => {
+    const xs = filas.filter((x) => x.concepto === concepto && x.moneda === moneda && x.tipo_moneda === tipo)
+    return xs.length ? xs.reduce((s, x) => s + num(x.importe), 0) : null
+  }
+  return CONCEPTOS_CUADRO.filter((c) => filas.some((x) => x.concepto === c)).map((c) => ({
+    concepto: c, ars: suma(c, 'Local', 'ARS'), eur: suma(c, 'Extranjera', 'EUR'), usd: suma(c, 'Extranjera', 'USD'),
+  }))
+}
 
 export function cargarDatos(): Datos {
   const firma = firmaDatos()
@@ -256,6 +275,7 @@ export function cargarDatos(): Datos {
     if (b) b.push(r)
     else bloques.set(k, [r])
   }
+  bloquesDisp = bloques
   const disponibles: Disponible[] = [...bloques].map(([k, filas]) => {
     const [g, f] = k.split('|')
     const suma = (concepto: string, tipo?: string, moneda?: string) =>

@@ -2,6 +2,8 @@ import { cargarDatos } from '@/lib/datos'
 import { requerirAdmin } from '@/lib/usuarios'
 import { agrupar, sumarDias } from '@/lib/kpi'
 import { fechaLarga } from '@/lib/formato'
+import { portada } from '@/lib/portada'
+import FotosPortada from './FotosPortada'
 
 export const metadata = { title: 'Datos e ingesta · Gestión Hotelera' }
 
@@ -116,6 +118,7 @@ export default async function Page() {
           </table>
         </div>
       </section>
+      <FotosPortada hoteles={portada()} />
     </div>
   )
 }

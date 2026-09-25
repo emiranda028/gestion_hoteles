@@ -105,7 +105,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] [&>*]:min-w-0">
         {/* ---------------- Supuestos ---------------- */}
         <div className="no-imprimir space-y-4">
           <Tarjeta titulo="Hotel a operar">
@@ -274,9 +274,9 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
             </div>
           </Tarjeta>
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2 [&>*]:min-w-0">
             <Tarjeta titulo="Comparación de modalidades (año en régimen)">
-              <table className="w-full text-sm tabular-nums">
+              <div className="overflow-x-auto"><table className="w-full text-sm tabular-nums">
                 <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
                     <th className="py-1 pr-3">Modalidad</th>
@@ -296,7 +296,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </Tarjeta>
 
             <Tarjeta titulo="Sensibilidad" extra={
