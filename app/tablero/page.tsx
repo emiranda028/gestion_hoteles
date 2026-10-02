@@ -5,5 +5,5 @@ import { datosTablero } from '@/lib/datos'
 export const metadata = { title: 'Tablero · Gestión Hotelera' }
 
 export default async function Page() {
-  return <Tablero datos={datosTablero(await datosDelUsuario())} />
+  return <Tablero datos={datosTablero(await datosDelUsuario('/tablero'))} />
 }

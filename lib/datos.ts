@@ -83,6 +83,7 @@ export type Datos = {
   desde: string
   hasta: string
   ingesta: EstadoIngesta
+  verDisponibilidades?: boolean // lo completa acceso.ts según el usuario
 }
 
 // Datos reales: DATA_DIR (en el servidor, fuera del código) o ./data. Demostración: ./data/demo

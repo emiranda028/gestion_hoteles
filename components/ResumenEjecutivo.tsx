@@ -7,7 +7,7 @@ import { AvisoDemo, Selector } from './ui'
 import { COLORES } from './colores'
 import LogoHotel from './LogoHotel'
 
-type Props = { demo: boolean; grupos: Grupo[]; hoteles: Hotel[]; flashDias: FlashDia[]; disponibles: Disponible[] }
+type Props = { demo: boolean; grupos: Grupo[]; hoteles: Hotel[]; flashDias: FlashDia[]; disponibles: Disponible[]; verDisp?: boolean }
 
 const UMBRAL_VERDE = 60 // % de ocupación a partir del cual el indicador se pinta de verde
 const VERDE = '#1a8f2e'
@@ -135,7 +135,7 @@ function ColumnaHotel({ hotel, d, ant }: { hotel: Hotel; d: FlashDia | undefined
   )
 }
 
-export default function ResumenEjecutivo({ demo, grupos, hoteles, flashDias, disponibles }: Props) {
+export default function ResumenEjecutivo({ demo, grupos, hoteles, flashDias, disponibles, verDisp = true }: Props) {
   const conHoteles = grupos.filter((g) => hoteles.some((h) => h.activo && h.grupo === g.id))
   const [grupo, setGrupo] = useState(conHoteles[0]?.id ?? '')
   const hotelesGrupo = hoteles.filter((h) => h.activo && h.grupo === grupo)
@@ -170,7 +170,7 @@ export default function ResumenEjecutivo({ demo, grupos, hoteles, flashDias, dis
             </select>
           </label>
         </div>
-        {disp ? (
+        {!verDisp ? null : disp ? (
           <>
             <div className="tarjeta overflow-hidden rounded-xl bg-white text-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
               <div className="bg-marca py-2 text-base font-semibold text-white">Total Disponibilidades</div>

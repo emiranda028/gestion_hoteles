@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { FirmaLtelc } from '@/components/LogoLtelc'
 import Nav from '@/components/Nav'
-import { usuarioActual } from '@/lib/usuarios'
+import { seccionesPermitidas, usuarioActual } from '@/lib/usuarios'
 import '@fontsource/sora/600.css'
 import '@fontsource/sora/800.css'
 import 'flag-icons/css/flag-icons.min.css'
@@ -23,7 +23,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const u = await usuarioActual()
-  const verPaises = !!u && (u.grupos.includes('*') || u.grupos.includes('panatel'))
+  const secciones = u ? seccionesPermitidas(u) : []
   return (
     <html lang="es">
       <head>
@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
-        <Nav usuario={u ? { nombre: u.nombre, admin: u.rol === 'admin' } : null} verPaises={verPaises} />
+        <Nav usuario={u ? { nombre: u.nombre, admin: u.rol === 'admin' } : null} secciones={secciones} />
         {u ? (
           <>
             <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">{children}</main>

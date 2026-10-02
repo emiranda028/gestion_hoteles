@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 export const COOKIE = 'lt_sesion'
 export const DURACION_HORAS = 12
 
-export type Sesion = { u: string; rol: 'admin' | 'cliente'; exp: number }
+export type Sesion = { u: string; rol: 'admin' | 'gerencia' | 'cliente'; exp: number }
 
 function secreto() {
   const s = process.env.SESSION_SECRET

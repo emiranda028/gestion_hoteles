@@ -6,7 +6,7 @@ import { cerrarSesion } from '@/app/acciones'
 import { IconoInstalar, useInstalarApp } from './InstalarApp'
 import { IconoLtelc } from './LogoLtelc'
 
-type Enlace = { href: string; texto: string; paises?: boolean }
+type Enlace = { href: string; texto: string; paises?: boolean; disp?: boolean }
 
 // Como en Power BI: primero los resúmenes y reportes diarios, después el análisis
 const PRINCIPALES: Enlace[] = [
@@ -17,7 +17,7 @@ const PRINCIPALES: Enlace[] = [
   { href: '/comparativa', texto: 'Comparativa' },
   { href: '/pickup', texto: 'Pick up' },
   { href: '/paises', texto: 'Por país', paises: true },
-  { href: '/disponibilidades', texto: 'Disponibilidades' },
+  { href: '/disponibilidades', texto: 'Disponibilidades', disp: true },
 ]
 const ANALISIS: Enlace[] = [
   { href: '/tablero', texto: 'Tablero' },
@@ -64,7 +64,7 @@ function ItemMenu({ href, texto, activo }: { href: string; texto: string; activo
   )
 }
 
-export default function Nav({ usuario, verPaises }: { usuario: { nombre: string; admin: boolean } | null; verPaises: boolean }) {
+export default function Nav({ usuario, secciones }: { usuario: { nombre: string; admin: boolean } | null; secciones: string[] }) {
   const ruta = usePathname()
   const instalar = useInstalarApp()
   const [abierto, setAbierto] = useState(false)
@@ -75,7 +75,8 @@ export default function Nav({ usuario, verPaises }: { usuario: { nombre: string;
   }, [abierto])
 
   if (!usuario) return null
-  const principales = PRINCIPALES.filter((l) => !l.paises || verPaises)
+  const principales = PRINCIPALES.filter((l) => secciones.includes(l.href))
+  const analisis = ANALISIS.filter((l) => secciones.includes(l.href))
   const analisisActivo = ANALISIS.some((l) => esActivo(ruta, l.href))
   const actual = [...principales, ...ANALISIS, ...ADMIN, { href: '/cuenta', texto: 'Mi cuenta' }]
     .find((l) => esActivo(ruta, l.href))
@@ -97,11 +98,13 @@ export default function Nav({ usuario, verPaises }: { usuario: { nombre: string;
               {esActivo(ruta, l.href) && <span className="absolute inset-x-2.5 bottom-0 h-0.5 rounded bg-acento" />}
             </Link>
           ))}
-          <div className={`px-2.5 ${analisisActivo ? 'font-semibold text-white' : 'text-neutral-300 hover:text-white'}`}>
-            <Desplegable boton={<span>Análisis</span>}>
-              {ANALISIS.map((l) => <ItemMenu key={l.href} href={l.href} texto={l.texto} activo={esActivo(ruta, l.href)} />)}
-            </Desplegable>
-          </div>
+          {analisis.length > 0 && (
+            <div className={`px-2.5 ${analisisActivo ? 'font-semibold text-white' : 'text-neutral-300 hover:text-white'}`}>
+              <Desplegable boton={<span>Análisis</span>}>
+                {analisis.map((l) => <ItemMenu key={l.href} href={l.href} texto={l.texto} activo={esActivo(ruta, l.href)} />)}
+              </Desplegable>
+            </div>
+          )}
         </nav>
         <div className="hidden items-center gap-3 text-sm text-neutral-300 lg:flex">
           {instalar && (
@@ -156,9 +159,9 @@ export default function Nav({ usuario, verPaises }: { usuario: { nombre: string;
             </div>
             {[
               { titulo: 'Reportes', links: principales },
-              { titulo: 'Análisis', links: ANALISIS },
+              { titulo: 'Análisis', links: analisis },
               { titulo: 'Cuenta', links: [...(usuario.admin ? ADMIN : []), { href: '/cuenta', texto: 'Mi cuenta' }] },
-            ].map((s) => (
+            ].filter((s) => s.links.length).map((s) => (
               <div key={s.titulo} className="px-3 pt-4">
                 <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-widest text-neutral-500">{s.titulo}</div>
                 {s.links.map((l) => (

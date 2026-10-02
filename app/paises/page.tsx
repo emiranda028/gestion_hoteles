@@ -4,6 +4,6 @@ import { datosDelUsuario } from '@/lib/acceso'
 export const metadata = { title: 'Registro por país · Gestión Hotelera' }
 
 export default async function Page() {
-  const { demo, paises } = await datosDelUsuario()
+  const { demo, paises } = await datosDelUsuario('/paises')
   return <RegistroPaises demo={demo} paises={paises} />
 }

@@ -5,17 +5,22 @@ import path from 'node:path'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { DATA } from './datos'
+import { SECCIONES } from './secciones'
 import { COOKIE, leerToken } from './sesion'
 
 // Usuarios de la app, administrados por LTELC desde /admin/usuarios.
 // Se guardan en DATA_DIR/usuarios.json con la contraseña cifrada (scrypt + sal).
 
-export type Rol = 'admin' | 'cliente'
+// admin: LTELC (ve todo, administra usuarios y datos) · gerencia: ve todos los hoteles, sin administración
+export type Rol = 'admin' | 'gerencia' | 'cliente'
 export type Usuario = {
   usuario: string
   nombre: string
   rol: Rol
   grupos: string[] // grupos de hoteles que puede ver ('*' = todos)
+  hoteles?: string[] // si tiene, solo ve esos hoteles dentro de sus grupos (vacío o ausente = todos los del grupo)
+  disponibilidades?: boolean // ve las disponibilidades de sus grupos (ausente = sí)
+  secciones?: string[] // solapas habilitadas (ausente = todas); el administrador siempre ve todas
   activo: boolean
   hash: string
   sal: string
@@ -97,4 +102,32 @@ export function validarPassword(p: string): string | null {
   if (p.length < 10) return 'La contraseña debe tener al menos 10 caracteres'
   if (!/[A-Za-z]/.test(p) || !/\d/.test(p)) return 'La contraseña debe combinar letras y números'
   return null
+}
+
+/** Qué puede ver un usuario: grupos, hoteles (null = todos los de sus grupos) y si ve las disponibilidades. */
+export function permisos(u: Pick<Usuario, 'rol' | 'grupos' | 'hoteles' | 'disponibilidades' | 'secciones'>) {
+  const todo = u.rol === 'admin' || u.rol === 'gerencia' || u.grupos.includes('*')
+  return {
+    todo,
+    grupos: new Set(u.grupos),
+    hoteles: !todo && u.hoteles?.length ? new Set(u.hoteles) : null,
+    disponibilidades: todo || u.disponibilidades !== false,
+  }
+}
+
+export function veHotel(u: Parameters<typeof permisos>[0], hotel: { id: string; grupo: string }) {
+  const p = permisos(u)
+  return p.todo || (p.grupos.has(hotel.grupo) && (!p.hoteles || p.hoteles.has(hotel.id)))
+}
+
+/** Solapas que ve el usuario, en el orden del menú. */
+export function seccionesPermitidas(u: Parameters<typeof permisos>[0]): string[] {
+  const p = permisos(u)
+  return SECCIONES.map((x) => x.href as string).filter((href) => {
+    if (u.rol === 'admin') return true
+    if (u.secciones?.length && !u.secciones.includes(href)) return false
+    if (href === '/disponibilidades' && !p.disponibilidades) return false
+    if (href === '/paises' && !veHotel(u, { id: 'marriott', grupo: 'panatel' })) return false
+    return true
+  })
 }

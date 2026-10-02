@@ -6,7 +6,7 @@ export const metadata = { title: 'Simulador de gestión · Gestión Hotelera' }
 
 /** Indicadores de los últimos 12 meses de cada hotel, para precargar el simulador. */
 async function referencias(): Promise<Referencia[]> {
-  const d = await datosDelUsuario()
+  const d = await datosDelUsuario('/simulador')
   if (!d.hasta) return []
   const desde = sumarDias(d.hasta, -364)
   return [...agrupar(d.dias.filter((x) => x.f >= desde), (x) => x.h).entries()].map(([id, dias]) => {

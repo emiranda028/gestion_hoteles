@@ -4,7 +4,7 @@ import { datosDelUsuario } from '@/lib/acceso'
 export const metadata = { title: 'Forecast y pick up · Gestión Hotelera' }
 
 export default async function Page() {
-  const { demo, hoteles, pickup, forecast, dias } = await datosDelUsuario()
+  const { demo, hoteles, pickup, forecast, dias } = await datosDelUsuario('/pickup')
   const desde = `${Number((dias[dias.length - 1]?.f ?? '2000').slice(0, 4)) - 2}`
   // pick up: últimos 120 días de fotos; historia: 2 años (para comparar con el año anterior)
   const corte = pickup.reduce((m, p) => (p.r > m ? p.r : m), '')

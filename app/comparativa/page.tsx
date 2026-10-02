@@ -4,7 +4,7 @@ import { datosDelUsuario } from '@/lib/acceso'
 export const metadata = { title: 'Comparativa H&F · Gestión Hotelera' }
 
 export default async function Page() {
-  const { demo, hoteles, hfDias } = await datosDelUsuario()
+  const { demo, hoteles, hfDias } = await datosDelUsuario('/comparativa')
   // alcanza con los últimos 14 meses (para comparar con el año anterior) y sin forecast lejano
   const ultimo = hfDias.filter((d) => d.tipo === 'History').reduce((m, d) => (d.f > m ? d.f : m), '')
   const desde = `${Number(ultimo.slice(0, 4)) - 1}-${ultimo.slice(5, 7)}-01`

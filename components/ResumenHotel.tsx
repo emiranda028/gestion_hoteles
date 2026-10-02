@@ -7,7 +7,7 @@ import { Medidor, Rubros, fechaTexto } from './ResumenEjecutivo'
 import { AvisoDemo } from './ui'
 import LogoHotel from './LogoHotel'
 
-type Props = { demo: boolean; hoteles: Hotel[]; flashDias: FlashDia[]; disponibles: Disponible[] }
+type Props = { demo: boolean; hoteles: Hotel[]; flashDias: FlashDia[]; disponibles: Disponible[]; verDisp?: boolean }
 
 const miles = (v: number) => Math.round(v).toLocaleString('es-AR')
 const sombra = 'tarjeta rounded-xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
@@ -61,7 +61,7 @@ function Cuadro({ filas }: { filas: FilaDisponible[] }) {
   )
 }
 
-export default function ResumenHotel({ demo, hoteles, flashDias, disponibles }: Props) {
+export default function ResumenHotel({ demo, hoteles, flashDias, disponibles, verDisp = true }: Props) {
   const activos = hoteles.filter((h) => h.activo)
   const [hid, setHid] = useState(activos[0]?.id ?? '')
   const hotel = activos.find((h) => h.id === hid)
@@ -111,7 +111,7 @@ export default function ResumenHotel({ demo, hoteles, flashDias, disponibles }: 
         )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr_1.35fr] [&>*]:min-w-0">
+      <div className={`grid gap-4 [&>*]:min-w-0 ${verDisp ? 'lg:grid-cols-[1fr_0.8fr_1.35fr]' : 'lg:grid-cols-[1.3fr_1fr]'}`}>
         {!d ? (
           <div className={`${sombra} p-6 text-sm text-neutral-500 lg:col-span-2`}>No llegó el Manager Flash de esta fecha.</div>
         ) : (
@@ -141,7 +141,7 @@ export default function ResumenHotel({ demo, hoteles, flashDias, disponibles }: 
           </>
         )}
 
-        <div className="space-y-3 lg:border-l-4 lg:border-acento lg:pl-4">
+        {verDisp && <div className="space-y-3 lg:border-l-4 lg:border-acento lg:pl-4">
           {disp ? (
             <>
               <div className={`${sombra} overflow-hidden text-center`}>
@@ -162,7 +162,7 @@ export default function ResumenHotel({ demo, hoteles, flashDias, disponibles }: 
           ) : (
             <div className={`${sombra} p-6 text-sm text-neutral-500`}>Sin informe de disponibilidades.</div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )

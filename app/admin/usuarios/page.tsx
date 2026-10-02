@@ -10,14 +10,25 @@ const GRUPOS = [{ id: 'panatel', nombre: 'Panatel (Marriott BA, Sheraton MDQ, Sh
 export default async function Page() {
   const yo = await requerirAdmin()
   const usuarios = leerUsuarios().map(publico).sort((a, b) => a.usuario.localeCompare(b.usuario))
-  const grupos = cargarDatos().demo ? [...GRUPOS, { id: 'demo', nombre: 'Grupo Demo' }] : GRUPOS
+  const datos = cargarDatos()
+  const grupos = datos.demo ? [...GRUPOS, { id: 'demo', nombre: 'Grupo Demo' }] : GRUPOS
+  const hoteles = datos.hoteles.filter((h) => h.activo).map(({ id, nombre, grupo }) => ({ id, nombre, grupo }))
   const nombreGrupo = (g: string) => (g === '*' ? 'Todos' : grupos.find((x) => x.id === g)?.nombre.split(' (')[0] ?? g)
+  const ROLES = { admin: 'Administrador', gerencia: 'Gerencia', cliente: 'Cliente' }
+  const ve = (u: (typeof usuarios)[number]) => {
+    const solapas = u.rol !== 'admin' && u.secciones?.length ? ` · ${u.secciones.length} solapas` : ''
+    if (u.rol !== 'cliente') return 'Todo' + solapas
+    const base = u.hoteles?.length
+      ? u.hoteles.map((h) => hoteles.find((x) => x.id === h)?.nombre ?? h).join(', ')
+      : u.grupos.map(nombreGrupo).join(', ')
+    return (u.disponibilidades === false ? `${base} · sin disponibilidades` : base) + solapas
+  }
   return (
     <div className="space-y-5">
       <div>
         <h1 className="titulo">Usuarios</h1>
         <p className="text-sm text-neutral-500">
-          Administración de accesos de LTELC. Los clientes solo ven los hoteles de los grupos que tienen asignados.
+          Administración de accesos. Gerencia ve todos los hoteles; cada cliente ve solo los grupos u hoteles asignados.
         </p>
       </div>
 
@@ -31,14 +42,14 @@ export default async function Page() {
               <tr key={u.usuario} className="border-b border-neutral-100 align-top">
                 <td className="py-2 pr-3 font-medium">{u.usuario}</td>
                 <td className="py-2 pr-3">{u.nombre}</td>
-                <td className="py-2 pr-3">{u.rol === 'admin' ? 'Administrador' : 'Cliente'}</td>
-                <td className="py-2 pr-3">{u.grupos.map(nombreGrupo).join(', ')}</td>
+                <td className="py-2 pr-3">{ROLES[u.rol]}</td>
+                <td className="py-2 pr-3">{ve(u)}</td>
                 <td className="py-2 pr-3">{u.activo ? <span className="text-emerald-700">Activo</span> : <span className="text-acento">Inactivo</span>}</td>
                 <td className="py-2 pr-3 text-neutral-500">{u.ultimoIngreso ? new Date(u.ultimoIngreso).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : '—'}</td>
                 <td className="py-2">
                   <details className="text-right">
                     <summary className="cursor-pointer text-xs text-marca underline">Editar</summary>
-                    <div className="mt-2 text-left"><FormUsuario grupos={grupos} usuario={u} /></div>
+                    <div className="mt-2 text-left"><FormUsuario grupos={grupos} hoteles={hoteles} usuario={u} /></div>
                     {u.usuario !== yo.usuario && (
                       <form action={borrarUsuario} className="mt-2">
                         <input type="hidden" name="usuario" value={u.usuario} />
@@ -53,9 +64,9 @@ export default async function Page() {
         </table>
       </section>
 
-      <section className="tarjeta max-w-2xl rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+      <section className="tarjeta max-w-3xl rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
         <h2 className="mb-3 text-base font-bold">Nuevo usuario</h2>
-        <FormUsuario grupos={grupos} />
+        <FormUsuario grupos={grupos} hoteles={hoteles} />
       </section>
     </div>
   )

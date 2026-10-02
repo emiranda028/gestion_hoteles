@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { COOKIE, DURACION_HORAS, crearToken } from '@/lib/sesion'
 import {
-  cambiarPassword, guardarUsuarios, leerUsuarios, nuevoUsuario, requerirAdmin, requerirUsuario, validarPassword,
-  verificar, type Rol,
+  cambiarPassword, guardarUsuarios, leerUsuarios, nuevoUsuario, permisos, requerirAdmin, requerirUsuario, validarPassword,
+  verificar, type Rol, type Usuario,
 } from '@/lib/usuarios'
 
 // Límite de intentos fallidos de ingreso: 8 cada 15 minutos por IP
@@ -56,8 +56,17 @@ export async function guardarUsuario(_: EstadoUsuario, form: FormData): Promise<
   const admin = await requerirAdmin()
   const usuario = String(form.get('usuario') ?? '').trim().toLowerCase()
   const nombre = String(form.get('nombre') ?? '').trim()
-  const rol = (form.get('rol') === 'admin' ? 'admin' : 'cliente') as Rol
-  const grupos = rol === 'admin' ? ['*'] : form.getAll('grupos').map(String)
+  const rol: Rol = form.get('rol') === 'admin' ? 'admin' : form.get('rol') === 'gerencia' ? 'gerencia' : 'cliente'
+  const grupos = rol === 'cliente' ? form.getAll('grupos').map(String) : ['*']
+  const soloAlgunos = rol === 'cliente' && form.get('alcance') === 'hoteles'
+  const { cargarDatos } = await import('@/lib/datos')
+  const delGrupo = new Map(cargarDatos().hoteles.map((h) => [h.id, h.grupo]))
+  const hoteles = soloAlgunos ? form.getAll('hoteles').map(String).filter((h) => grupos.includes(delGrupo.get(h) ?? '')) : []
+  const disponibilidades = rol !== 'cliente' || form.get('disponibilidades') === 'on'
+  const { SECCIONES } = await import('@/lib/secciones')
+  const elegidas = form.getAll('secciones').map(String).filter((x) => SECCIONES.some((s) => s.href === x))
+  // todas marcadas = sin restricción (así las solapas nuevas que se agreguen también se ven)
+  const secciones = rol === 'admin' || elegidas.length === SECCIONES.length ? undefined : elegidas
   const activo = form.get('activo') === 'on'
   const password = String(form.get('password') ?? '')
   const esNuevo = form.get('nuevo') === '1'
@@ -65,6 +74,8 @@ export async function guardarUsuario(_: EstadoUsuario, form: FormData): Promise<
   if (!/^[a-z0-9._@-]{3,60}$/.test(usuario)) return { error: 'Usuario inválido: usá letras, números, punto, guion o un email.' }
   if (!nombre) return { error: 'Falta el nombre.' }
   if (rol === 'cliente' && grupos.length === 0) return { error: 'Elegí al menos un grupo de hoteles para el cliente.' }
+  if (secciones && secciones.length === 0) return { error: 'Elegí al menos una solapa.' }
+  if (soloAlgunos && hoteles.length === 0) return { error: 'Elegí al menos un hotel de los grupos marcados.' }
   if (esNuevo || password) {
     const e = validarPassword(password)
     if (e) return { error: e }
@@ -74,11 +85,11 @@ export async function guardarUsuario(_: EstadoUsuario, form: FormData): Promise<
   const i = lista.findIndex((x) => x.usuario === usuario)
   if (esNuevo) {
     if (i >= 0) return { error: 'Ya existe un usuario con ese nombre.' }
-    lista.push(nuevoUsuario({ usuario, nombre, rol, grupos, activo }, password))
+    lista.push(nuevoUsuario({ usuario, nombre, rol, grupos, hoteles, disponibilidades, secciones, activo }, password))
   } else {
     if (i < 0) return { error: 'El usuario no existe.' }
     if (usuario === admin.usuario && (rol !== 'admin' || !activo)) return { error: 'No podés quitarte el rol de administrador ni desactivarte.' }
-    let u = { ...lista[i], nombre, rol, grupos, activo }
+    let u: Usuario = { ...lista[i], nombre, rol, grupos, hoteles, disponibilidades, secciones, activo }
     if (password) u = cambiarPassword(u, password)
     lista[i] = u
   }
@@ -111,7 +122,8 @@ export async function cambiarMiPassword(_: EstadoPassword, form: FormData): Prom
 /** Cuadro de disponibilidades (ARS / EUR / USD) de un grupo y fecha, solo si el usuario puede ver ese grupo. */
 export async function verCuadroDisponibilidades(grupo: string, fecha: string) {
   const u = await requerirUsuario()
-  if (!u.grupos.includes('*') && !u.grupos.includes(grupo)) return []
+  const p = permisos(u)
+  if (!p.disponibilidades || (!p.todo && !p.grupos.has(grupo))) return []
   const { cuadroDisponibilidades } = await import('@/lib/datos')
   return cuadroDisponibilidades(grupo, fecha)
 }

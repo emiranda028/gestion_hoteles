@@ -4,6 +4,6 @@ import { datosDelUsuario } from '@/lib/acceso'
 export const metadata = { title: 'Manager Flash · Gestión Hotelera' }
 
 export default async function Page() {
-  const { demo, hoteles, flashDias } = await datosDelUsuario()
+  const { demo, hoteles, flashDias } = await datosDelUsuario('/flash')
   return <ManagerFlash demo={demo} hoteles={hoteles} flashDias={flashDias} />
 }
