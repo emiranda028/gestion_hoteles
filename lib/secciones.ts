@@ -11,6 +11,9 @@ export const SECCIONES = [
   { href: '/tablero', texto: 'Tablero' },
   { href: '/proyecciones', texto: 'Proyecciones' },
   { href: '/simulador', texto: 'Simulador' },
+  { href: '/forecast', texto: 'Forecast y Budget' },
+  { href: '/cobranzas', texto: 'Cobranzas' },
+  { href: '/calidad', texto: 'Calidad' },
 ] as const
 
 export type Seccion = (typeof SECCIONES)[number]['href']

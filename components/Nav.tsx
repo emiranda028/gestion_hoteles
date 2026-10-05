@@ -24,6 +24,12 @@ const ANALISIS: Enlace[] = [
   { href: '/proyecciones', texto: 'Proyecciones' },
   { href: '/simulador', texto: 'Simulador' },
 ]
+// Herramientas de trabajo del hotel: se cargan y editan desde la plataforma
+const GESTION: Enlace[] = [
+  { href: '/forecast', texto: 'Forecast y Budget' },
+  { href: '/cobranzas', texto: 'Cobranzas' },
+  { href: '/calidad', texto: 'Calidad' },
+]
 const ADMIN: Enlace[] = [
   { href: '/datos', texto: 'Datos' },
   { href: '/admin/usuarios', texto: 'Usuarios' },
@@ -77,8 +83,8 @@ export default function Nav({ usuario, secciones }: { usuario: { nombre: string;
   if (!usuario) return null
   const principales = PRINCIPALES.filter((l) => secciones.includes(l.href))
   const analisis = ANALISIS.filter((l) => secciones.includes(l.href))
-  const analisisActivo = ANALISIS.some((l) => esActivo(ruta, l.href))
-  const actual = [...principales, ...ANALISIS, ...ADMIN, { href: '/cuenta', texto: 'Mi cuenta' }]
+  const gestion = GESTION.filter((l) => secciones.includes(l.href))
+  const actual = [...principales, ...ANALISIS, ...GESTION, ...ADMIN, { href: '/cuenta', texto: 'Mi cuenta' }]
     .find((l) => esActivo(ruta, l.href))
 
   return (
@@ -86,25 +92,25 @@ export default function Nav({ usuario, secciones }: { usuario: { nombre: string;
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:px-6 lg:h-16">
         <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Inicio">
           <IconoLtelc className="h-8 w-8 text-white" fondo={false} />
-          <span className="text-base font-bold leading-tight tracking-tight">Gestión Hotelera</span>
+          <span className="text-base font-bold leading-tight tracking-tight lg:hidden xl:inline">Gestión Hotelera</span>
         </Link>
 
         {/* escritorio */}
         <nav className="hidden flex-1 items-center text-sm lg:flex">
           {principales.map((l) => (
             <Link key={l.href} href={l.href}
-              className={`relative px-2.5 py-5 transition-colors xl:px-3 ${esActivo(ruta, l.href) ? 'font-semibold text-white' : 'text-neutral-300 hover:text-white'}`}>
+              className={`relative whitespace-nowrap px-2 py-5 transition-colors xl:px-3 ${esActivo(ruta, l.href) ? 'font-semibold text-white' : 'text-neutral-300 hover:text-white'}`}>
               {l.texto}
               {esActivo(ruta, l.href) && <span className="absolute inset-x-2.5 bottom-0 h-0.5 rounded bg-acento" />}
             </Link>
           ))}
-          {analisis.length > 0 && (
-            <div className={`px-2.5 ${analisisActivo ? 'font-semibold text-white' : 'text-neutral-300 hover:text-white'}`}>
-              <Desplegable boton={<span>Análisis</span>}>
-                {analisis.map((l) => <ItemMenu key={l.href} href={l.href} texto={l.texto} activo={esActivo(ruta, l.href)} />)}
+          {([['Análisis', analisis], ['Gestión', gestion]] as const).map(([titulo, links]) => links.length > 0 && (
+            <div key={titulo} className={`whitespace-nowrap px-2 xl:px-2.5 ${links.some((l) => esActivo(ruta, l.href)) ? 'font-semibold text-white' : 'text-neutral-300 hover:text-white'}`}>
+              <Desplegable boton={<span>{titulo}</span>}>
+                {links.map((l) => <ItemMenu key={l.href} href={l.href} texto={l.texto} activo={esActivo(ruta, l.href)} />)}
               </Desplegable>
             </div>
-          )}
+          ))}
         </nav>
         <div className="hidden items-center gap-3 text-sm text-neutral-300 lg:flex">
           {instalar && (
@@ -160,6 +166,7 @@ export default function Nav({ usuario, secciones }: { usuario: { nombre: string;
             {[
               { titulo: 'Reportes', links: principales },
               { titulo: 'Análisis', links: analisis },
+              { titulo: 'Gestión', links: gestion },
               { titulo: 'Cuenta', links: [...(usuario.admin ? ADMIN : []), { href: '/cuenta', texto: 'Mi cuenta' }] },
             ].filter((s) => s.links.length).map((s) => (
               <div key={s.titulo} className="px-3 pt-4">

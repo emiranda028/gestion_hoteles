@@ -34,3 +34,12 @@ export async function datosDelUsuario(seccion: string): Promise<Datos> {
     ingesta: null,
   }
 }
+
+/** Para los módulos de Gestión: usuario de la sesión con acceso a la solapa, y los hoteles que puede ver. */
+export async function accesoGestion(seccion: string) {
+  const u = await requerirUsuario()
+  const permitidas = seccionesPermitidas(u)
+  if (!permitidas.includes(seccion)) redirect(permitidas[0] ?? '/cuenta')
+  const hoteles = cargarDatos().hoteles.filter((h) => h.activo && veHotel(u, h))
+  return { usuario: u, hoteles }
+}
