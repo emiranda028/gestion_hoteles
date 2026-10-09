@@ -19,7 +19,9 @@ URL = "https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial"
 def main() -> int:
     serie: dict[str, float] = {}
     try:
-        with urllib.request.urlopen(URL, timeout=30) as r:
+        # sin un User-Agent de navegador el sitio responde 403 (bloquea el de Python)
+        pedido = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0 (gestion-hoteles)", "Accept": "application/json"})
+        with urllib.request.urlopen(pedido, timeout=30) as r:
             for d in json.load(r):
                 if d.get("venta") and d["fecha"] >= "2020-01-01":
                     serie[d["fecha"]] = float(d["venta"])
