@@ -39,18 +39,18 @@ hoteles:
     base: "MARRIOTT"
     grupo: panatel
     habitaciones: 300
-  - id: sheraton-mdq
-    nombre: "Sheraton Mar del Plata"
-    opera: "Sheraton Mar Del Plata"
-    base: "SHERATON MDQ"
-    grupo: panatel
-    habitaciones: 194
   - id: sheraton-bcr
     nombre: "Sheraton Bariloche"
     opera: "Sheraton Bariloche"
     base: "SHERATON BCR"
     grupo: panatel
     habitaciones: 161
+  - id: sheraton-mdq
+    nombre: "Sheraton Mar del Plata"
+    opera: "Sheraton Mar Del Plata"
+    base: "SHERATON MDQ"
+    grupo: panatel
+    habitaciones: 194
   - id: city-express
     nombre: "City Express Palermo"
     opera: "City Express by Marriott Palermo"

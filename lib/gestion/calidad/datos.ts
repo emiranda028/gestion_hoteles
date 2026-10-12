@@ -6,7 +6,8 @@ import type { Auditoria } from './modelo'
 const archivo = (hotel: string) => ['calidad', hotel, 'auditorias.json']
 
 export function auditorias(hotel: string): Auditoria[] {
-  return leer<Auditoria[]>(archivo(hotel), [])
+  // las auditorías guardadas sin respuestas o sin plan (pasaba al crear una sin datos de ejemplo) se leen vacías
+  return leer<Auditoria[]>(archivo(hotel), []).map((a) => ({ ...a, respuestas: a.respuestas ?? {}, plan: a.plan ?? {} }))
 }
 
 export function auditoria(hotel: string, id: string): Auditoria | undefined {
@@ -26,7 +27,7 @@ export function modificar(hotel: string, id: string, usuario: string, accion: st
 
 export function crear(hotel: string, usuario: string, datos: Omit<Auditoria, 'id' | 'creada' | 'creadaPor' | 'respuestas' | 'plan' | 'estado'> & Partial<Pick<Auditoria, 'respuestas' | 'plan'>>) {
   const lista = auditorias(hotel)
-  const a: Auditoria = { respuestas: {}, plan: {}, ...datos, id: nuevoId(), estado: 'borrador', creada: new Date().toISOString(), creadaPor: usuario }
+  const a: Auditoria = { ...datos, respuestas: datos.respuestas ?? {}, plan: datos.plan ?? {}, id: nuevoId(), estado: 'borrador', creada: new Date().toISOString(), creadaPor: usuario }
   lista.push(a)
   escribir(archivo(hotel), lista)
   registrar('calidad', hotel, usuario, 'Creó la auditoría', a.titulo)

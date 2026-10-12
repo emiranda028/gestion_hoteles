@@ -6,8 +6,8 @@ import { DATA } from './datos'
 // Fotos de la portada del login: las sube LTELC desde "Datos" y quedan en el servidor (nunca en GitHub)
 export const HOTELES_PORTADA = [
   { id: 'marriott', nombre: 'Marriott Buenos Aires', lugar: 'Buenos Aires' },
-  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', lugar: 'Mar del Plata' },
   { id: 'sheraton-bcr', nombre: 'Sheraton Bariloche', lugar: 'San Carlos de Bariloche' },
+  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', lugar: 'Mar del Plata' },
   { id: 'city-express', nombre: 'City Express Palermo', lugar: 'Palermo, Buenos Aires' },
 ] as const
 

@@ -102,8 +102,8 @@ let firmaCache = ''
 
 const HOTELES: Hotel[] = [
   { id: 'marriott', nombre: 'Marriott Buenos Aires', grupo: 'panatel', habitaciones: 300, activo: true },
-  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', grupo: 'panatel', habitaciones: 194, activo: true },
   { id: 'sheraton-bcr', nombre: 'Sheraton Bariloche', grupo: 'panatel', habitaciones: 161, activo: true },
+  { id: 'sheraton-mdq', nombre: 'Sheraton Mar del Plata', grupo: 'panatel', habitaciones: 194, activo: true },
   { id: 'city-express', nombre: 'City Express Palermo', grupo: 'numah', habitaciones: 51, activo: true },
   { id: 'maitei', nombre: 'Maitei Posadas (histórico)', grupo: 'numah', habitaciones: 98, activo: false },
   // datos de demostración (data/demo)
