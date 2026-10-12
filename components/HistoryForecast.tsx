@@ -37,12 +37,25 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
   const delHotel = useMemo(() => hfDias.filter((d) => d.h === hotel), [hfDias, hotel])
   const hoy = delHotel.find((d) => d.tipo === 'Forecast')?.f ?? delHotel[delHotel.length - 1]?.f ?? ''
   const meses = [...new Set(delHotel.map((d) => d.f.slice(0, 7)))].sort().reverse()
-  const [mesSel, setMesSel] = useState('')
-  const mes = meses.includes(mesSel) ? mesSel : hoy.slice(0, 7)
+  const primero = delHotel[0]?.f ?? '', ultimo = delHotel[delHotel.length - 1]?.f ?? ''
+  // período: un mes, los próximos N días desde hoy o un rango de fechas a elección
+  const [periodo, setPeriodo] = useState('')
+  const [rango, setRango] = useState({ d: '', h: '' })
+  const elegido = periodo || `mes:${hoy.slice(0, 7)}`
+  const [desde, hasta] = (() => {
+    let d: string, h: string
+    if (elegido.startsWith('dias:')) { d = hoy; h = sumarDias(hoy, Number(elegido.slice(5)) - 1) }
+    else if (elegido === 'rango') { d = rango.d || hoy; h = rango.h || finDeMes(hoy) }
+    else { const m = elegido.slice(4); d = `${m}-01`; h = finDeMes(d) }
+    if (d > h) [d, h] = [h, d]
+    return [d < primero ? primero : d, h > ultimo ? ultimo : h]
+  })()
+  const unMes = desde.slice(0, 7) === hasta.slice(0, 7)
+  const nombrePeriodo = elegido.startsWith('mes:') ? mesCorto(desde) : `${fechaLarga(desde)} al ${fechaLarga(hasta)}`
   const [diaSel, setDiaSel] = useState('')
   const [filtroDia, setFiltroDia] = useState('todos')
 
-  const delMes = delHotel.filter((d) => d.f.startsWith(mes))
+  const delMes = delHotel.filter((d) => d.f >= desde && d.f <= hasta)
   const hist = agregado(delMes.filter((d) => d.tipo === 'History'))
   const fc = agregado(delMes.filter((d) => d.tipo === 'Forecast'))
   const tot = agregado(delMes)
@@ -50,13 +63,16 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
   const minimo = conPct.reduce((m, x) => (x.occ < m.occ ? x : m), conPct[0] ?? { d: null, occ: 0 })
   const maximo = conPct.reduce((m, x) => (x.occ > m.occ ? x : m), conPct[0] ?? { d: null, occ: 0 })
   const porFecha = useMemo(() => new Map(delHotel.map((d) => [d.f, d])), [delHotel])
-  const dia = porFecha.get(diaSel) ?? porFecha.get(hoy) ?? delMes[0]
+  const enPeriodo = (f: string) => f >= desde && f <= hasta
+  const dia = (enPeriodo(diaSel) ? porFecha.get(diaSel) : undefined) ?? (enPeriodo(hoy) ? porFecha.get(hoy) : undefined) ?? delMes[0]
+  // con más de un mes, un resumen por mes
+  const porMes = unMes ? [] : [...new Set(delMes.map((d) => d.f.slice(0, 7)))].map((m) => ({ m, ...agregado(delMes.filter((d) => d.f.startsWith(m))) }))
   const bonvoy = NIVELES.map((n) => ({ nivel: n, n: bonvoyDias.filter((b) => b.h === hotel && b.f === dia?.f && b.nivel === n).reduce((s, b) => s + b.n, 0) }))
     .filter((x) => x.n > 0)
   const adrMes = tot.adr
 
   const grafico = delMes.map((d) => ({
-    f: d.f, etiqueta: `${diaSemana(d.f).slice(0, 2)} ${fechaCorta(d.f)}`, occ: d.occ, rev: d.rev,
+    f: d.f, etiqueta: unMes ? `${diaSemana(d.f).slice(0, 2)} ${fechaCorta(d.f)}` : fechaCorta(d.f), occ: d.occ, rev: d.rev,
     color: d.f === hoy ? COLORES.acento : d.tipo === 'History' ? '#6b6b6b' : FORECAST,
   }))
   const tabla = delMes.filter((d) => filtroDia === 'todos' || diaSemana(d.f) === filtroDia)
@@ -82,10 +98,28 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
           <p className="text-sm text-neutral-500">Real hasta el {fechaLarga(menosUno(hoy))} y reservas confirmadas desde el {fechaLarga(hoy)} · USD</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          <Selector etiqueta="Hotel" valor={hotel} onChange={(h) => { setHotel(h); setMesSel(''); setDiaSel('') }}
+          <Selector etiqueta="Hotel" valor={hotel} onChange={(h) => { setHotel(h); setDiaSel('') }}
             opciones={activos.map((h) => ({ valor: h.id, texto: h.nombre }))} />
-          <Selector etiqueta="Mes" valor={mes} onChange={(m) => { setMesSel(m); setDiaSel('') }}
-            opciones={meses.map((m) => ({ valor: m, texto: mesCorto(m) }))} />
+          <Selector etiqueta="Período" valor={elegido} onChange={(v) => {
+            if (v === 'rango' && !rango.d) setRango({ d: desde, h: hasta })
+            setPeriodo(v); setDiaSel('')
+          }}
+            opciones={[
+              ...[30, 60, 90].map((n) => ({ valor: `dias:${n}`, texto: `Próximos ${n} días` })),
+              ...meses.map((m) => ({ valor: `mes:${m}`, texto: mesCorto(m) + (m === hoy.slice(0, 7) ? ' (este mes)' : '') })),
+              { valor: 'rango', texto: 'Rango de fechas…' },
+            ]} />
+          {elegido === 'rango' && (
+            <div className="flex items-end gap-2">
+              {([['d', 'Desde'], ['h', 'Hasta']] as const).map(([k, t]) => (
+                <label key={k} className="flex flex-col gap-1 text-xs text-neutral-500">{t}
+                  <input type="date" min={primero} max={ultimo} value={k === 'd' ? desde : hasta}
+                    onChange={(e) => { if (e.target.value) { setRango({ d: desde, h: hasta, [k]: e.target.value }); setDiaSel('') } }}
+                    className="rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900" />
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -93,7 +127,7 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
         {[
           { t: 'Ocupación histórica', a: hist, color: '#6b6b6b', sub: 'ya ocurrido' },
           { t: 'Ocupación proyectada', a: fc, color: FORECAST, sub: 'reservas confirmadas' },
-          { t: 'Ocupación del mes', a: tot, color: tot.pct >= 60 ? '#1a8f2e' : COLORES.acento, sub: 'real + proyectado' },
+          { t: unMes && elegido.startsWith('mes:') ? 'Ocupación del mes' : 'Ocupación del período', a: tot, color: tot.pct >= 60 ? '#1a8f2e' : COLORES.acento, sub: 'real + proyectado' },
         ].map(({ t, a, color, sub }) => (
           <div key={t} className="tarjeta rounded-xl bg-white p-4 text-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
             <div className="text-sm font-semibold">{t}</div>
@@ -174,7 +208,34 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
         </Tarjeta>
       </div>
 
-      <Tarjeta titulo={`Detalle diario · ${mesCorto(mes)}`}
+      {porMes.length > 1 && (
+        <Tarjeta titulo={`Por mes · ${nombrePeriodo}`}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm tabular-nums">
+              <thead className="border-b-2 border-marca text-right text-[11px] uppercase tracking-wide text-neutral-500">
+                <tr><th className="py-2 text-left">Mes</th><th className="pr-2">Ocupadas</th><th className="pr-2">% Ocup.</th><th className="pr-2">ADR</th><th>Ingresos</th></tr>
+              </thead>
+              <tbody>
+                {porMes.map((x) => (
+                  <tr key={x.m} className="border-b border-neutral-100 text-right">
+                    <td className="py-1.5 text-left capitalize">{mesCorto(x.m)}</td>
+                    <td className="pr-2">{entero(x.occ)}</td>
+                    <td className="pr-2"><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: semaforo(x.pct) }} />{pct(x.pct, 1)}</span></td>
+                    <td className="pr-2">{dinero(x.adr, 'USD')}</td>
+                    <td>{dinero(x.rev, 'USD')}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t-2 border-marca text-right font-semibold">
+                <tr><td className="py-2 text-left">Total</td><td className="pr-2">{entero(tot.occ)}</td><td className="pr-2">{pct(tot.pct, 1)}</td><td className="pr-2">{dinero(tot.adr, 'USD')}</td><td>{dinero(tot.rev, 'USD')}</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="mt-2 text-[11px] text-neutral-500">Solo los días del período elegido: un mes que no está completo suma solo esos días.</p>
+        </Tarjeta>
+      )}
+
+      <Tarjeta titulo={`Detalle diario · ${nombrePeriodo}`}
         extra={<Selector valor={filtroDia} onChange={setFiltroDia}
           opciones={[{ valor: 'todos', texto: 'Todos los días' }, ...DIAS.slice(1).concat(DIAS[0]).map((d) => ({ valor: d, texto: d }))]} />}>
         <div className="overflow-x-auto">
@@ -248,12 +309,21 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
           </table>
         </div>
         <p className="mt-2 text-[11px] text-neutral-500">
-          Semáforo de ocupación: verde desde 70%, amarillo 60–70%, rojo debajo de 60%. ADR en verde si supera el promedio del mes.
+          Semáforo de ocupación: verde desde 70%, amarillo 60–70%, rojo debajo de 60%. ADR en verde si supera el promedio del período.
           &quot;Año ant.&quot; compara con el mismo día de la semana del año anterior.
         </p>
       </Tarjeta>
     </div>
   )
+}
+
+function sumarDias(f: string, n: number) {
+  return new Date(new Date(f + 'T12:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10)
+}
+
+function finDeMes(f: string) {
+  const d = new Date(Date.UTC(Number(f.slice(0, 4)), Number(f.slice(5, 7)), 0))
+  return d.toISOString().slice(0, 10)
 }
 
 function menosUno(f: string) {
