@@ -35,6 +35,10 @@ const ADMIN: Enlace[] = [
   { href: '/admin/usuarios', texto: 'Usuarios' },
 ]
 
+// Soporte LTELC: formulario de reclamos con el sistema y el nombre ya cargados (se abre en otra pestaña)
+const urlSoporte = (nombre: string) =>
+  'https://ltelc.tech/soporte/?' + new URLSearchParams({ sistema: 'Gestión Hotelera', nombre })
+
 const esActivo = (ruta: string, href: string) => (href === '/' ? ruta === '/' : ruta.startsWith(href))
 
 /** Menú desplegable que se cierra al hacer clic afuera o al navegar. */
@@ -128,6 +132,7 @@ export default function Nav({ usuario, secciones }: { usuario: { nombre: string;
           }>
             {usuario.admin && ADMIN.map((l) => <ItemMenu key={l.href} href={l.href} texto={l.texto} activo={esActivo(ruta, l.href)} />)}
             <ItemMenu href="/cuenta" texto="Mi cuenta" activo={ruta === '/cuenta'} />
+            <a href={urlSoporte(usuario.nombre)} target="_blank" rel="noopener" className="block px-4 py-2 hover:bg-neutral-100">Soporte y reclamos</a>
             <form action={cerrarSesion} className="border-t border-neutral-100 mt-1.5 pt-1.5">
               <button type="submit" className="block w-full px-4 py-2 text-left text-acento hover:bg-neutral-100">Salir</button>
             </form>
@@ -181,6 +186,11 @@ export default function Nav({ usuario, secciones }: { usuario: { nombre: string;
                 ))}
               </div>
             ))}
+            <div className="px-3 pt-4">
+              <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Ayuda</div>
+              <a href={urlSoporte(usuario.nombre)} target="_blank" rel="noopener"
+                className="flex items-center rounded-lg px-3 py-2.5 text-[15px] text-neutral-300 hover:bg-white/5">Soporte y reclamos</a>
+            </div>
             <div className="mt-auto space-y-2 px-5 py-5">
               {instalar && (
                 <button onClick={instalar} className="flex w-full items-center justify-center gap-2 rounded-full bg-white py-2.5 text-sm font-semibold text-neutral-900">
