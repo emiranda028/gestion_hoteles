@@ -48,14 +48,14 @@ export function LogoLtelc({ animado = true, claro = false }: { animado?: boolean
   )
 }
 
-/** "Hecho por LTELC BI" para el pie de cada página. */
+/** "Hecho por LTELC" para el pie de cada página, con enlace a la web de LTELC. */
 export function FirmaLtelc() {
   return (
-    <a href="https://www.lotengoenlacabeza.com.ar" target="_blank" rel="noopener noreferrer"
+    <a href="https://ltelc.tech" target="_blank" rel="noopener"
       className="inline-flex items-baseline gap-1.5 text-neutral-500 hover:text-neutral-900">
       Hecho por
       <MarcaLtelc modo="hover" className="text-[13px] text-neutral-900" />
-      <span className="font-marca text-[13px] font-semibold text-neutral-500">BI</span>
+      <span className="text-[12px] text-neutral-400">· ltelc.tech</span>
     </a>
   )
 }

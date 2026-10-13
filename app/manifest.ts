@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'Gestión Hotelera · LTELC BI',
     short_name: 'Hoteles LTELC',
-    description: 'Indicadores diarios, forecast, disponibilidades y simulador de gestión hotelera. Hecho por LTELC BI.',
+    description: 'Indicadores diarios, forecast, disponibilidades y simulador de gestión hotelera. Hecho por LTELC.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

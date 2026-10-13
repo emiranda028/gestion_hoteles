@@ -9,7 +9,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Gestión Hotelera · LTELC BI',
-  description: 'Tablero de indicadores, forecast, disponibilidades y simulador de gestión hotelera. Hecho por LTELC BI.',
+  description: 'Tablero de indicadores, forecast, disponibilidades y simulador de gestión hotelera. Hecho por LTELC.',
   applicationName: 'Hoteles LTELC',
   appleWebApp: { capable: true, title: 'Hoteles LTELC', statusBarStyle: 'black-translucent' },
 }
