@@ -16,3 +16,9 @@ test('sesión: token válido, alterado y vencido', () => {
   const vencido = Buffer.from(JSON.stringify({ u: 'x', rol: 'admin', exp: Date.now() - 1 })).toString('base64url')
   assert.equal(leerToken(`${vencido}.${firma}`), null)
 })
+
+test('sesión: mantener abierta dura 15 días', () => {
+  const s = leerToken(crearToken('x', 'cliente', 15 * 24))!
+  const dias = (s.exp - Date.now()) / 864e5
+  assert.ok(dias > 14.99 && dias <= 15)
+})

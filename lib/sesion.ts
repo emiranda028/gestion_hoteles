@@ -3,6 +3,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const COOKIE = 'lt_sesion'
 export const DURACION_HORAS = 12
+// «Mantener la sesión abierta» en el ingreso
+export const DURACION_RECORDAR_HORAS = 15 * 24
 
 export type Sesion = { u: string; rol: 'admin' | 'gerencia' | 'cliente'; exp: number }
 
@@ -14,8 +16,8 @@ function secreto() {
 
 const firmar = (datos: string) => createHmac('sha256', secreto()).update(datos).digest('base64url')
 
-export function crearToken(u: string, rol: Sesion['rol']): string {
-  const datos = Buffer.from(JSON.stringify({ u, rol, exp: Date.now() + DURACION_HORAS * 3600e3 })).toString('base64url')
+export function crearToken(u: string, rol: Sesion['rol'], horas = DURACION_HORAS): string {
+  const datos = Buffer.from(JSON.stringify({ u, rol, exp: Date.now() + horas * 3600e3 })).toString('base64url')
   return `${datos}.${firmar(datos)}`
 }
 

@@ -2,7 +2,7 @@
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { COOKIE, DURACION_HORAS, crearToken } from '@/lib/sesion'
+import { COOKIE, DURACION_HORAS, DURACION_RECORDAR_HORAS, crearToken } from '@/lib/sesion'
 import {
   cambiarPassword, guardarUsuarios, leerUsuarios, nuevoUsuario, permisos, requerirAdmin, requerirUsuario, validarPassword,
   verificar, type Rol, type Usuario,
@@ -36,8 +36,9 @@ export async function iniciarSesion(_: EstadoLogin, form: FormData): Promise<Est
   }
   intentos.delete(clave)
   guardarUsuarios(leerUsuarios().map((x) => (x.usuario === u.usuario ? { ...x, ultimoIngreso: new Date().toISOString() } : x)))
-  ;(await cookies()).set(COOKIE, crearToken(u.usuario, u.rol), {
-    httpOnly: true, sameSite: 'lax', path: '/', maxAge: DURACION_HORAS * 3600,
+  const horas = form.get('recordar') === 'on' ? DURACION_RECORDAR_HORAS : DURACION_HORAS
+  ;(await cookies()).set(COOKIE, crearToken(u.usuario, u.rol, horas), {
+    httpOnly: true, sameSite: 'lax', path: '/', maxAge: horas * 3600,
     // solo por https; COOKIE_SEGURA=false permite probar por http (con la IP) antes de tener dominio
     secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SEGURA !== 'false',
   })
