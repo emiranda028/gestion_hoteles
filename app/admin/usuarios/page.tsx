@@ -1,5 +1,6 @@
 import { borrarUsuario } from '@/app/acciones'
 import { cargarDatos } from '@/lib/datos'
+import { ultimaActividad } from '@/lib/actividad'
 import { leerUsuarios, publico, requerirAdmin } from '@/lib/usuarios'
 import FormUsuario from './FormUsuario'
 
@@ -11,6 +12,8 @@ export default async function Page() {
   const yo = await requerirAdmin()
   const usuarios = leerUsuarios().map(publico).sort((a, b) => a.usuario.localeCompare(b.usuario))
   const datos = cargarDatos()
+  const actividad = ultimaActividad()
+  const fecha = (t?: string) => (t ? new Date(t).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' }) : '—')
   const grupos = datos.demo ? [...GRUPOS, { id: 'demo', nombre: 'Grupo Demo' }] : GRUPOS
   const hoteles = datos.hoteles.filter((h) => h.activo).map(({ id, nombre, grupo }) => ({ id, nombre, grupo }))
   const nombreGrupo = (g: string) => (g === '*' ? 'Todos' : grupos.find((x) => x.id === g)?.nombre.split(' (')[0] ?? g)
@@ -29,13 +32,14 @@ export default async function Page() {
         <h1 className="titulo">Usuarios</h1>
         <p className="text-sm text-neutral-500">
           Administración de accesos. Gerencia ve todos los hoteles; cada cliente ve solo los grupos u hoteles asignados.
+          «Última actividad» es la última vez que abrió la app (aunque tenga la sesión guardada); el detalle está en <a href="/admin/actividad" className="text-marca underline">Actividad</a>.
         </p>
       </div>
 
       <section className="tarjeta overflow-x-auto rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
         <table className="w-full text-sm">
           <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
-            <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Nombre</th><th className="pr-3">Rol</th><th className="pr-3">Ve</th><th className="pr-3">Estado</th><th className="pr-3">Último ingreso</th><th /></tr>
+            <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Nombre</th><th className="pr-3">Rol</th><th className="pr-3">Ve</th><th className="pr-3">Estado</th><th className="pr-3">Última actividad</th><th className="pr-3">Inicio de sesión</th><th /></tr>
           </thead>
           <tbody>
             {usuarios.map((u) => (
@@ -45,7 +49,10 @@ export default async function Page() {
                 <td className="py-2 pr-3">{ROLES[u.rol]}</td>
                 <td className="py-2 pr-3">{ve(u)}</td>
                 <td className="py-2 pr-3">{u.activo ? <span className="text-emerald-700">Activo</span> : <span className="text-acento">Inactivo</span>}</td>
-                <td className="py-2 pr-3 text-neutral-500">{u.ultimoIngreso ? new Date(u.ultimoIngreso).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : '—'}</td>
+                <td className="py-2 pr-3">{actividad.has(u.usuario)
+                  ? <a href={`/admin/actividad?usuario=${encodeURIComponent(u.usuario)}`} className="underline decoration-neutral-300 hover:decoration-marca">{fecha(actividad.get(u.usuario))}</a>
+                  : <span className="text-neutral-400">—</span>}</td>
+                <td className="py-2 pr-3 text-neutral-500">{fecha(u.ultimoIngreso)}</td>
                 <td className="py-2">
                   <details className="text-right">
                     <summary className="cursor-pointer text-xs text-marca underline">Editar</summary>

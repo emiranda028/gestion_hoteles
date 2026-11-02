@@ -33,6 +33,7 @@ const GESTION: Enlace[] = [
 const ADMIN: Enlace[] = [
   { href: '/datos', texto: 'Datos' },
   { href: '/admin/usuarios', texto: 'Usuarios' },
+  { href: '/admin/actividad', texto: 'Actividad' },
 ]
 
 // Soporte LTELC: formulario de reclamos con el sistema y el nombre ya cargados (se abre en otra pestaña)

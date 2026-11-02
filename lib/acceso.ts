@@ -1,4 +1,5 @@
 import 'server-only'
+import { registrarVista } from './actividad'
 import { type Datos, cargarDatos } from './datos'
 import { redirect } from 'next/navigation'
 import { permisos, requerirUsuario, seccionesPermitidas, veHotel } from './usuarios'
@@ -8,6 +9,7 @@ export async function datosDelUsuario(seccion: string): Promise<Datos> {
   const u = await requerirUsuario()
   const permitidas = seccionesPermitidas(u)
   if (!permitidas.includes(seccion)) redirect(permitidas[0] ?? '/cuenta')
+  registrarVista(u.usuario, seccion)
   const d = cargarDatos()
   const p = permisos(u)
   if (p.todo) return { ...d, verDisponibilidades: true }
@@ -40,6 +42,7 @@ export async function accesoGestion(seccion: string) {
   const u = await requerirUsuario()
   const permitidas = seccionesPermitidas(u)
   if (!permitidas.includes(seccion)) redirect(permitidas[0] ?? '/cuenta')
+  registrarVista(u.usuario, seccion)
   const hoteles = cargarDatos().hoteles.filter((h) => h.activo && veHotel(u, h))
   return { usuario: u, hoteles }
 }

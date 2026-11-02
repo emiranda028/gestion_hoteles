@@ -2,6 +2,7 @@
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { registrarIngreso } from '@/lib/actividad'
 import { COOKIE, DURACION_HORAS, DURACION_RECORDAR_HORAS, crearToken } from '@/lib/sesion'
 import {
   cambiarPassword, guardarUsuarios, leerUsuarios, nuevoUsuario, permisos, requerirAdmin, requerirUsuario, validarPassword,
@@ -36,6 +37,7 @@ export async function iniciarSesion(_: EstadoLogin, form: FormData): Promise<Est
   }
   intentos.delete(clave)
   guardarUsuarios(leerUsuarios().map((x) => (x.usuario === u.usuario ? { ...x, ultimoIngreso: new Date().toISOString() } : x)))
+  registrarIngreso(u.usuario)
   const horas = form.get('recordar') === 'on' ? DURACION_RECORDAR_HORAS : DURACION_HORAS
   ;(await cookies()).set(COOKIE, crearToken(u.usuario, u.rol, horas), {
     httpOnly: true, sameSite: 'lax', path: '/', maxAge: horas * 3600,
