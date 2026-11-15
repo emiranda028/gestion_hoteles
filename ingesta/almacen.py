@@ -9,6 +9,8 @@ Tablas (todas en data/):
   bancos.csv            detalle por cuenta bancaria / inversión / caja
   tipo_cambio.csv       dólar BNA vendedor por día
   paises.csv            huéspedes por país y mes (Marriott BA)
+  corporativas.csv      producción de las cuentas corporativas por mes (Marriott BA)
+  tarifas_corporativas.csv  tarifas negociadas (RFP) de cada cuenta corporativa por año
 """
 from __future__ import annotations
 

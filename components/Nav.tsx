@@ -22,6 +22,7 @@ const PRINCIPALES: Enlace[] = [
 const ANALISIS: Enlace[] = [
   { href: '/tablero', texto: 'Tablero' },
   { href: '/proyecciones', texto: 'Proyecciones' },
+  { href: '/corporativas', texto: 'Cuentas corporativas' },
   { href: '/simulador', texto: 'Simulador' },
 ]
 // Herramientas de trabajo del hotel: se cargan y editan desde la plataforma

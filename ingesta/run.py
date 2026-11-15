@@ -7,6 +7,7 @@ Uso:
   python -m ingesta.run inspeccionar ARCHIVO          # muestra qué se lee de un archivo, sin guardar nada
   python -m ingesta.run historico HF.xlsb             # importa la base histórica de Power BI
   python -m ingesta.run paises Venta_x_PAIS.xlsx      # huéspedes por país (Marriott BA)
+  python -m ingesta.run corporativas "Spc Corp.xlsx"   # cuentas corporativas (Marriott BA)
 """
 from __future__ import annotations
 
@@ -158,6 +159,16 @@ def cmd_paises(args) -> int:
     return 0
 
 
+def cmd_corporativas(args) -> int:
+    from . import corporativas
+
+    prod, rfp = corporativas.leer(Path(args.archivo).read_bytes())
+    corporativas.guardar(prod, rfp)
+    meses = sorted({f["mes"] for f in prod})
+    print(f"Cuentas corporativas: {len(prod)} filas, {meses[0]} a {meses[-1]}; {len(rfp)} tarifas RFP")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m ingesta.run", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -178,6 +189,9 @@ def main(argv=None) -> int:
     pa = sub.add_parser("paises")
     pa.add_argument("archivo")
     pa.set_defaults(fn=cmd_paises)
+    co = sub.add_parser("corporativas")
+    co.add_argument("archivo")
+    co.set_defaults(fn=cmd_corporativas)
     args = p.parse_args(argv)
     if args.cmd == "inspeccionar":
         return args.fn(args)

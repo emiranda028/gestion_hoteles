@@ -15,4 +15,7 @@ echo "=== $(date '+%F %T') ==="
 if [ -n "${PAISES_URL:-}" ]; then
   curl -fsSL "$PAISES_URL" -o "$DATA_DIR/.paises.xlsx" && .venv/bin/python -m ingesta.run paises "$DATA_DIR/.paises.xlsx"
 fi
+if [ -n "${CORPORATIVAS_URL:-}" ]; then
+  curl -fsSL "$CORPORATIVAS_URL" -o "$DATA_DIR/.corporativas.xlsx" && .venv/bin/python -m ingesta.run corporativas "$DATA_DIR/.corporativas.xlsx"
+fi
 .venv/bin/python -m ingesta.tipo_cambio

@@ -193,7 +193,7 @@ def _derivados_flash(hid: str, f: opera.Flash, hotel: dict) -> list[dict]:
 def _excel(nombre: str, contenido: bytes, config: dict, fecha: date | None) -> Resultado | None:
     from openpyxl import load_workbook
 
-    from . import paises
+    from . import corporativas, paises
 
     hojas = load_workbook(io.BytesIO(contenido), read_only=True).sheetnames
     if not disponibilidades.es_planilla(hojas):
@@ -202,6 +202,11 @@ def _excel(nombre: str, contenido: bytes, config: dict, fecha: date | None) -> R
             paises.guardar(filas)
             return Resultado(nombre, "Huéspedes por país", True, paises.HOTEL, max(f["mes"] for f in filas),
                              detalle=f"{len(filas)} filas")
+        if corporativas.es_planilla(contenido):
+            prod, rfp = corporativas.leer(contenido)
+            corporativas.guardar(prod, rfp)
+            return Resultado(nombre, "Cuentas corporativas", True, corporativas.HOTEL, max(f["mes"] for f in prod),
+                             detalle=f"{len(prod)} filas, {len(rfp)} tarifas")
         return None  # otros Excel (conversiones manuales, etc.) no se usan
     d = disponibilidades.leer(contenido)
     grupo = grupo_por_empresa(d.empresa, config)

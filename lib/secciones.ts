@@ -10,6 +10,7 @@ export const SECCIONES = [
   { href: '/disponibilidades', texto: 'Disponibilidades' },
   { href: '/tablero', texto: 'Tablero' },
   { href: '/proyecciones', texto: 'Proyecciones' },
+  { href: '/corporativas', texto: 'Cuentas corporativas' },
   { href: '/simulador', texto: 'Simulador' },
   { href: '/forecast', texto: 'Forecast y Budget' },
   { href: '/cobranzas', texto: 'Cobranzas' },

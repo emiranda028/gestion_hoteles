@@ -183,6 +183,52 @@ def test_paises(data_tmp):
     assert len(almacen.leer("paises")) == 2
 
 
+def test_corporativas(data_tmp):
+    import io
+    from datetime import datetime
+
+    from openpyxl import Workbook
+
+    from ingesta import corporativas
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "2026"
+    ws.append([None, None, None, None, None, None, None, "ENERO", None, None, "FEBRERO", None, None, "YTD"])
+    ws.append(["RUBRO", "EJECUTIVO", None, "Rate Program Name", "RATE 2025", "BKF", "RATE 2026", "RN", "ADR", "REV",
+               "RN", "ADR", "REV", "RN"])
+    ws.append(["BANCOS", "LIZ ", None, "ACME BANK", None, None, None, 10, 150, 1500, 2, 100, None, 12])
+    ws.append([None, "Direccion", None, "ZETA CORP", None, None, None, None, None, None, 0, "#DIV/0!", 0, 0])
+    ws.append([None, None, None, None, None, None, None, 10, 150, 1500])  # total del Excel
+    viejo = wb.create_sheet("2023")
+    viejo.append([None, None, "ENERO", None, None])
+    viejo.append([None, "Rate Program Name", "RoomNights", "ADR (Net)", "Revenue (Net)"])
+    viejo.append([4.0, "ACME BANK", 3, 90, 270])
+    wb.create_sheet("Enero 2026").append(["Rate Program Name", "RN"])  # hojas mensuales: se ignoran
+    rfp = wb.create_sheet("RFP 26 aprobados ")
+    rfp.append(["Accountname", "Season Start", "Season End", "Rate Product", "Dynamic VP % Discount",
+                "Account Rate Single Room Pool Group 1", "Account Rate Double Room Pool Group 1",
+                "Account Rate Single Room Pool Group 2", "Account Rate Double Room Pool Group 2",
+                "Account Rate Single Room Pool Group 3", "Account Rate Double Room Pool Group 3", "LRA Room Pool Group 1",
+                "Tax Included", "Cancellation Policy", "Cancellation Time", "Breakfast Included",
+                "Property Sales Contact Name"])
+    rfp.append(["Acme Bank Inc", datetime(2026, 1, 1), "12/31/2026", "Fixed Volume Producer", None, 160, 160, 180, 180,
+                None, None, "Y", "N", "Requested", "24 hours", "Y", "Liz Alburjas"])
+    rfp.append(["SIN TARIFA"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    assert corporativas.es_planilla(buf.getvalue())
+    prod, tarifas = corporativas.leer(buf.getvalue())
+    assert [(f["mes"], f["cuenta"], f["rn"], f["revenue"], f["ejecutivo"]) for f in prod] == [
+        ("2023-01", "ACME BANK", 3, 270, ""), ("2026-01", "ACME BANK", 10, 1500, "Liz"),
+        ("2026-02", "ACME BANK", 2, 200, "Liz")]
+    assert prod[1]["rubro"] == "BANCOS" and prod[2]["adr"] == 100
+    assert [(t["anio"], t["cuenta"], t["tarifa1"], t["hasta"], t["desayuno"]) for t in tarifas] == [
+        (2026, "Acme Bank Inc", 160, "2026-12-31", "si")]
+    corporativas.guardar(prod, tarifas)
+    corporativas.guardar(prod, tarifas)
+    assert len(almacen.leer("corporativas")) == 3 and len(almacen.leer("tarifas_corporativas")) == 1
+
+
 def test_normalizar_pesos_a_dolares(data_tmp):
     from ingesta.normalizar import normalizar
     almacen.escribir("tipo_cambio", almacen.TC_COLS, [{"fecha": "2025-01-10", "ars_por_usd": "1000"}])

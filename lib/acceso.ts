@@ -30,6 +30,8 @@ export async function datosDelUsuario(seccion: string): Promise<Datos> {
     bonvoy: deHotel(d.bonvoy),
     bonvoyDias: deHotel(d.bonvoyDias),
     paises: deHotel(d.paises),
+    corporativas: deHotel(d.corporativas),
+    tarifasCorp: deHotel(d.tarifasCorp),
     disponibles: p.disponibilidades ? d.disponibles.filter((x) => grupos.has(x.g)) : [],
     cuentas: p.disponibilidades ? d.cuentas.filter((x) => grupos.has(x.g)) : [],
     verDisponibilidades: p.disponibilidades,

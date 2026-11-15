@@ -127,7 +127,7 @@ export function seccionesPermitidas(u: Parameters<typeof permisos>[0]): string[]
     if (u.rol === 'admin') return true
     if (u.secciones?.length && !u.secciones.includes(href)) return false
     if (href === '/disponibilidades' && !p.disponibilidades) return false
-    if (href === '/paises' && !veHotel(u, { id: 'marriott', grupo: 'panatel' })) return false
+    if ((href === '/paises' || href === '/corporativas') && !veHotel(u, { id: 'marriott', grupo: 'panatel' })) return false
     return true
   })
 }

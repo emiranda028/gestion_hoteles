@@ -34,6 +34,13 @@ export type HFDia = {
 export type BonvoyMes = { mes: string; h: string; nivel: string; n: number }
 export type BonvoyDia = { f: string; h: string; nivel: string; n: number }
 export type PaisMes = { mes: string; h: string; pais: string; continente: string; n: number }
+// Cuentas corporativas (planilla Spc Corp de Ventas): producción por programa de tarifa y mes, USD
+export type CorpMes = { mes: string; h: string; cuenta: string; rubro: string; ejecutivo: string; rn: number; rev: number }
+// Tarifas negociadas en el RFP de cada año (habitación single, pools 1 a 3), USD
+export type TarifaCorp = {
+  h: string; anio: number; cuenta: string; desde: string; hasta: string; producto: string; descuento: number | null
+  tarifas: (number | null)[]; desayuno: boolean | null; contacto: string
+}
 // Disponibilidades tal cual las informa cada grupo: pesos en pesos, dólares y euros en su moneda,
 // y el tipo de cambio que usa el grupo.
 export type Disponible = {
@@ -77,6 +84,8 @@ export type Datos = {
   bonvoy: BonvoyMes[]
   bonvoyDias: BonvoyDia[]
   paises: PaisMes[]
+  corporativas: CorpMes[]
+  tarifasCorp: TarifaCorp[]
   disponibles: Disponible[]
   cuentas: CuentaBanco[]
   tipoCambio: { fecha: string; valor: number } | null
@@ -90,7 +99,7 @@ export type Datos = {
 export const DATA = process.env.DATA_DIR || path.join(process.cwd(), 'data')
 const DEMO = path.join(process.cwd(), 'data', 'demo')
 const ARCHIVOS = ['hf.csv', 'flash.csv', 'pickup.csv', 'bonvoy.csv', 'disponibilidades.csv', 'bancos.csv',
-  'tipo_cambio.csv', 'paises.csv', 'ultima_ingesta.json']
+  'tipo_cambio.csv', 'paises.csv', 'corporativas.csv', 'tarifas_corporativas.csv', 'ultima_ingesta.json']
 
 /** Firma de los archivos de datos: cambia cada vez que la ingesta escribe algo. */
 function firmaDatos() {
@@ -318,6 +327,15 @@ export function cargarDatos(): Datos {
     bonvoy: [...bonvoyIdx.values()],
     bonvoyDias,
     paises: leer('paises.csv').map((r) => ({ mes: r.mes, h: r.hotel, pais: r.pais, continente: r.continente, n: num(r.huespedes) })),
+    corporativas: leer('corporativas.csv').map((r) => ({
+      mes: r.mes, h: r.hotel, cuenta: r.cuenta, rubro: r.rubro, ejecutivo: r.ejecutivo, rn: num(r.rn), rev: num(r.revenue),
+    })),
+    tarifasCorp: leer('tarifas_corporativas.csv').map((r) => ({
+      h: r.hotel, anio: num(r.anio), cuenta: r.cuenta, desde: r.desde, hasta: r.hasta, producto: r.producto,
+      descuento: r.descuento ? num(r.descuento) : null,
+      tarifas: [r.tarifa1, r.tarifa2, r.tarifa3].map((t) => (t ? num(t) : null)),
+      desayuno: r.desayuno === 'si' ? true : r.desayuno === 'no' ? false : null, contacto: r.contacto,
+    })),
     disponibles,
     cuentas,
     tipoCambio: tcF.length ? { fecha: tcF[tcF.length - 1], valor: tcV[tcV.length - 1] } : null,
