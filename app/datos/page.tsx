@@ -4,6 +4,7 @@ import { agrupar, sumarDias } from '@/lib/kpi'
 import { fechaLarga } from '@/lib/formato'
 import { portada } from '@/lib/portada'
 import FotosPortada from './FotosPortada'
+import SubirReporte from './SubirReporte'
 
 export const metadata = { title: 'Datos e ingesta · Gestión Hotelera' }
 
@@ -35,6 +36,8 @@ export default async function Page() {
           planillas de disponibilidades que llegan al correo, y se actualiza esta app.
         </p>
       </div>
+
+      <SubirReporte />
 
       <div className="grid gap-4 md:grid-cols-2">
         <section className="tarjeta rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">

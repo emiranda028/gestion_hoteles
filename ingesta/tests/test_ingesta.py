@@ -183,6 +183,32 @@ def test_paises(data_tmp):
     assert len(almacen.leer("paises")) == 2
 
 
+def test_paises_una_hoja_por_anio(data_tmp):
+    import io
+
+    from openpyxl import Workbook
+
+    from ingesta import paises
+    wb = Workbook()
+    ws = wb.active
+    ws.title = " Pais 2026"
+    ws.append([None, "PAIS ", "ENE", "%", "FEB", "%", "TOTAL", "%", "PAIS ", "RANKING"])
+    ws.append(["AM", "United States", 40, 0.4, 30, 0.3, 70, 0.4, "ARGENTINA", 1])
+    ws.append(["RESTO", "AUSTRALIA", 5, 0.05, 0, 0, 5, 0.01])
+    ws.append(["EU", "switzeland", 2, 0.02, None, "#DIV/0!", 2, 0])
+    ws.append([None, "TOTAL", 47, 1, 30, 1, 77, 1])
+    viejo = wb.create_sheet("Pais Origen 2019")
+    viejo.append(["PAIS ", "ENE", "%"])
+    viejo.append(["SUIZA", 3, 0.1])
+    buf = io.BytesIO()
+    wb.save(buf)
+    assert paises.es_planilla(buf.getvalue())
+    filas = paises.leer(buf.getvalue())
+    assert [(f["mes"], f["pais"], f["continente"], f["huespedes"]) for f in filas] == [
+        ("2019-01", "SUIZA", "EUROPA", 3), ("2026-01", "ESTADOS UNIDOS", "AMÉRICA", 40), ("2026-01", "AUSTRALIA", "OCEANÍA", 5),
+        ("2026-01", "SUIZA", "EUROPA", 2), ("2026-02", "ESTADOS UNIDOS", "AMÉRICA", 30)]
+
+
 def test_corporativas(data_tmp):
     import io
     from datetime import datetime

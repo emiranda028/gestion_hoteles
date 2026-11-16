@@ -134,6 +134,42 @@ export async function verCuadroDisponibilidades(grupo: string, fecha: string) {
 export type EstadoFoto = { ok?: string; error?: string }
 
 /** Sube (o reemplaza) la foto de un hotel para la portada del login. */
+export type EstadoReporte = { error?: string; ok?: string; detalle?: string[] }
+
+/** Carga a mano un reporte o planilla (PDF, Excel o ZIP) con el mismo proceso que los que llegan por mail. */
+export async function subirReporte(_: EstadoReporte, form: FormData): Promise<EstadoReporte> {
+  const u = await requerirAdmin()
+  const archivo = form.get('archivo')
+  if (!(archivo instanceof File) || !archivo.size) return { error: 'Elegí un archivo' }
+  if (!/\.(pdf|xlsx|xlsm|zip)$/i.test(archivo.name)) return { error: 'El archivo tiene que ser PDF, Excel (.xlsx) o ZIP' }
+  if (archivo.size > 15 * 1024 * 1024) return { error: 'El archivo pesa más de 15 MB' }
+  const path = await import('node:path')
+  const { mkdir, writeFile } = await import('node:fs/promises')
+  const { existsSync } = await import('node:fs')
+  const { execFile } = await import('node:child_process')
+  const { DATA } = await import('@/lib/datos')
+  const python = path.join(/*turbopackIgnore: true*/ process.cwd(), '.venv', 'bin', 'python')
+  if (!existsSync(python)) return { error: 'Falta instalar la ingesta en el servidor (deploy/instalar.sh)' }
+  // cada carga queda guardada en su propia carpeta, con fecha y usuario
+  const sello = new Date().toISOString().replace(/[:.]/g, '-')
+  const carpeta = path.join(/*turbopackIgnore: true*/ DATA, 'subidos', `${sello}-${u.usuario.replace(/[^a-z0-9._-]/gi, '_')}`)
+  await mkdir(carpeta, { recursive: true })
+  await writeFile(path.join(carpeta, path.basename(archivo.name).replace(/[^\w.\- ]/g, '_')), Buffer.from(await archivo.arrayBuffer()))
+  const salida = await new Promise<{ codigo: number; texto: string }>((resolve) => {
+    execFile(python, ['-m', 'ingesta.run', 'carpeta', carpeta], {
+      cwd: process.cwd(), env: { ...process.env, DATA_DIR: DATA }, timeout: 180e3, maxBuffer: 4 * 1024 * 1024,
+    }, (err, stdout, stderr) => resolve({ codigo: err ? 1 : 0, texto: `${stdout}\n${err ? stderr : ''}` }))
+  })
+  const lineas = salida.texto.split('\n').map((l) => l.trimEnd()).filter((l) => l.trim())
+  const resumen = lineas.filter((l) => /^\[(OK |ERR)\]|^\s+!|archivos procesados/.test(l))
+  revalidatePath('/', 'layout')
+  if (resumen.some((l) => l.includes('0 archivos procesados, 0 con error'))) {
+    return { error: 'El archivo no es un reporte que use la app (o no se reconoció su formato).', detalle: resumen }
+  }
+  if (salida.codigo !== 0) return { error: 'Hubo un problema al procesar el archivo.', detalle: resumen.length ? resumen : lineas.slice(-8) }
+  return { ok: 'Archivo cargado: la app ya muestra los datos nuevos.', detalle: resumen }
+}
+
 export async function guardarFotoPortada(_: EstadoFoto, form: FormData): Promise<EstadoFoto> {
   await requerirAdmin()
   const { HOTELES_PORTADA, CARPETA_PORTADA, rutaFoto } = await import('@/lib/portada')
