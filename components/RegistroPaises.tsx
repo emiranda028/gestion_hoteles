@@ -170,7 +170,7 @@ export default function RegistroPaises({ demo, paises }: { demo: boolean; paises
                       <Bandera iso2={f.iso2} />
                       <span className="flex-1 truncate">{f.nombre}</span>
                       <span className="tabular-nums">{entero(f.n)}</span>
-                      <span className={`w-14 text-right text-xs tabular-nums ${activo ? 'text-neutral-300' : 'text-neutral-500'}`}>{pct(share, 1)}</span>
+                      <span className={`hidden w-14 text-right text-xs tabular-nums sm:inline ${activo ? 'text-neutral-300' : 'text-neutral-500'}`}>{pct(share, 1)}</span>
                       <span className={`w-16 text-right text-xs tabular-nums ${v === null ? 'text-neutral-400' : v >= 0 ? (activo ? 'text-emerald-300' : 'text-emerald-700') : (activo ? 'text-red-300' : 'text-acento')}`}>
                         {v === null ? 'nuevo' : `${v >= 0 ? '▲' : '▼'} ${pct(Math.abs(v * 100), 0)}`}
                       </span>

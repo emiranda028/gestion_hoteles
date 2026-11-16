@@ -139,7 +139,7 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
             <div className="mt-1 text-[11px] text-neutral-400">{sub}</div>
           </div>
         ))}
-        <div className="grid gap-3 sm:col-span-3 sm:grid-cols-2 xl:col-span-1 xl:grid-cols-1">
+        <div className="grid grid-cols-2 gap-3 sm:col-span-3 xl:col-span-1 xl:grid-cols-1">
           <div className="tarjeta rounded-xl bg-white p-4 text-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
             <div className="text-xs text-neutral-500">Menor ocupación</div>
             <div className="text-2xl font-bold text-acento tabular-nums">{pct(minimo.occ, 2)}</div>

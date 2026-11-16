@@ -155,8 +155,8 @@ export default function ResumenEjecutivo({ demo, grupos, hoteles, flashDias, dis
   return (
     <div className="space-y-4">
       {demo && <AvisoDemo />}
-      <div className="grid gap-3 lg:grid-cols-[1fr_1.3fr_1.4fr_0.6fr_0.6fr]">
-        <div className="tarjeta space-y-2 rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1.3fr_1.4fr_0.6fr_0.6fr]">
+        <div className="tarjeta col-span-2 space-y-2 lg:col-span-1 rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
           <h1 className="text-base font-bold uppercase tracking-wide">Resumen ejecutivo comparado</h1>
           {conHoteles.length > 1 && (
             <Selector etiqueta="Grupo" valor={grupo} onChange={(g) => { setGrupo(g); setFechaSel('') }}
@@ -172,11 +172,11 @@ export default function ResumenEjecutivo({ demo, grupos, hoteles, flashDias, dis
         </div>
         {!verDisp ? null : disp ? (
           <>
-            <div className="tarjeta overflow-hidden rounded-xl bg-white text-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+            <div className="tarjeta col-span-2 overflow-hidden rounded-xl bg-white text-center shadow-[0_1px_4px_rgba(0,0,0,0.08)] lg:col-span-1">
               <div className="bg-marca py-2 text-base font-semibold text-white">Total Disponibilidades</div>
               <div className="flex h-[calc(100%-2.5rem)] min-h-20 items-center justify-center text-3xl font-bold tabular-nums">$ {miles(disp.total)}</div>
             </div>
-            <div className="grid gap-2">
+            <div className="col-span-2 grid gap-2 lg:col-span-1">
               <Caja titulo="Disponibilidades Moneda Extranjera"><div className="text-2xl font-bold tabular-nums">$ {miles(disp.monedaExtranjera)}</div></Caja>
               <Caja titulo="Disponibilidades Moneda Local"><div className="text-2xl font-bold tabular-nums">$ {miles(disp.monedaLocal)}</div></Caja>
             </div>
@@ -184,7 +184,7 @@ export default function ResumenEjecutivo({ demo, grupos, hoteles, flashDias, dis
             <Caja titulo="EUR"><div className="text-xl font-bold tabular-nums">{miles(disp.eur)}</div></Caja>
           </>
         ) : (
-          <Caja className="lg:col-span-4"><p className="text-sm text-neutral-500">Sin informe de disponibilidades para esta fecha.</p></Caja>
+          <Caja className="col-span-2 lg:col-span-4"><p className="text-sm text-neutral-500">Sin informe de disponibilidades para esta fecha.</p></Caja>
         )}
       </div>
       {disp && disp.f !== fecha && (

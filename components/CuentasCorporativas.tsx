@@ -197,7 +197,7 @@ export default function CuentasCorporativas({ demo, filas, tarifas, ocupadasHote
               <CartesianGrid stroke={COLORES.grilla} vertical={false} />
               <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="n" tick={{ fontSize: 11 }} width={44} />
-              <YAxis yAxisId="a" orientation="right" tick={{ fontSize: 10 }} width={64} tickFormatter={(v: number) => `US$ ${v}`} />
+              <YAxis yAxisId="a" orientation="right" tick={{ fontSize: 10 }} width={64} tickFormatter={(v: number) => `US$\u00a0${v}`} />
               <Tooltip formatter={(v, n) => (n === 'ADR' ? dinero(Number(v), 'USD') : entero(Number(v)))} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar yAxisId="n" dataKey="actual" name={`Noches ${anio}`} fill={COLORES.principal} radius={[3, 3, 0, 0]} />

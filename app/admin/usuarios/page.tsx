@@ -39,20 +39,22 @@ export default async function Page() {
       <section className="tarjeta overflow-x-auto rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
         <table className="w-full text-sm">
           <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
-            <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Nombre</th><th className="pr-3">Rol</th><th className="pr-3">Ve</th><th className="pr-3">Estado</th><th className="pr-3">Última actividad</th><th className="pr-3">Inicio de sesión</th><th /></tr>
+            <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Nombre</th><th className="hidden pr-3 md:table-cell">Rol</th><th className="hidden pr-3 md:table-cell">Ve</th><th className="pr-3">Estado</th><th className="pr-3">Última actividad</th><th className="hidden pr-3 md:table-cell">Inicio de sesión</th><th /></tr>
           </thead>
           <tbody>
             {usuarios.map((u) => (
               <tr key={u.usuario} className="border-b border-neutral-100 align-top">
                 <td className="py-2 pr-3 font-medium">{u.usuario}</td>
-                <td className="py-2 pr-3">{u.nombre}</td>
-                <td className="py-2 pr-3">{ROLES[u.rol]}</td>
-                <td className="py-2 pr-3">{ve(u)}</td>
+                <td className="py-2 pr-3">{u.nombre}
+                  {/* en el celular, rol y alcance van debajo del nombre */}
+                  <div className="text-xs text-neutral-500 md:hidden">{ROLES[u.rol]} · {ve(u)}</div></td>
+                <td className="hidden py-2 pr-3 md:table-cell">{ROLES[u.rol]}</td>
+                <td className="hidden py-2 pr-3 md:table-cell">{ve(u)}</td>
                 <td className="py-2 pr-3">{u.activo ? <span className="text-emerald-700">Activo</span> : <span className="text-acento">Inactivo</span>}</td>
                 <td className="py-2 pr-3">{actividad.has(u.usuario)
                   ? <a href={`/admin/actividad?usuario=${encodeURIComponent(u.usuario)}`} className="underline decoration-neutral-300 hover:decoration-marca">{fecha(actividad.get(u.usuario))}</a>
                   : <span className="text-neutral-400">—</span>}</td>
-                <td className="py-2 pr-3 text-neutral-500">{fecha(u.ultimoIngreso)}</td>
+                <td className="hidden py-2 pr-3 text-neutral-500 md:table-cell">{fecha(u.ultimoIngreso)}</td>
                 <td className="py-2">
                   <details className="text-right">
                     <summary className="cursor-pointer text-xs text-marca underline">Editar</summary>

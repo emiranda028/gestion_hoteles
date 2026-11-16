@@ -1,11 +1,18 @@
 'use client'
 import { useActionState } from 'react'
+import PantallaCarga from '@/components/PantallaCarga'
 import { iniciarSesion } from '../acciones'
 
 export default function FormLogin({ volver }: { volver: string }) {
   const [estado, accion, pendiente] = useActionState(iniciarSesion, {})
   return (
     <form action={accion} className="space-y-4">
+      {/* mientras se ingresa (el servidor ya prepara el Resumen), los logos de los hoteles muestran que la app está trabajando */}
+      {pendiente && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-100 px-4 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]">
+          <PantallaCarga texto="Ingresando… preparando la información de los hoteles" />
+        </div>
+      )}
       <input type="hidden" name="volver" value={volver} />
       <label className="block text-sm font-medium">
         Usuario

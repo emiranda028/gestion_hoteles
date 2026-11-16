@@ -63,8 +63,25 @@ a:hover > .ltelc-hover .r, .ltelc-hover:hover .r { max-width: 6em; opacity: 1; }
 .ltelc-logo-animado .ltelc-idea { transform-box: fill-box; transform-origin: center; animation: ltelc-idea 0.5s cubic-bezier(.3,1.6,.5,1) 2.7s both; }
 @keyframes ltelc-idea { from { transform: scale(0); } to { transform: scale(1); } }
 
+/* pantalla de carga: aparece apenas pasa un instante (si los datos llegan rápido, no parpadea),
+   los logos se van encendiendo de a uno y una barra avanza sin fin */
+.carga { animation: carga-aparecer 0.3s ease 0.15s both; }
+.carga-logo { animation: carga-logo 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * 0.4s); }
+.carga-barra { animation: carga-barra 1.4s cubic-bezier(.6,0,.4,1) infinite; }
+.carga-isotipo { animation: carga-latido 1.6s ease-in-out infinite; }
+@keyframes carga-aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes carga-logo {
+  0% { opacity: 0.18; transform: translateY(6px) scale(0.96); filter: grayscale(1); }
+  14%, 62% { opacity: 1; transform: none; filter: none; }
+  100% { opacity: 0.18; transform: translateY(6px) scale(0.96); filter: grayscale(1); }
+}
+@keyframes carga-barra { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes carga-latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .portada-zoom, .ltelc-logo-animado .ltelc-idea { animation: none; }
+  .portada-zoom, .ltelc-logo-animado .ltelc-idea, .carga-isotipo { animation: none; }
+  .carga-logo { animation: none; opacity: 1; }
+  .carga-barra { animation-duration: 3s; }
   .ltelc-animado .p { opacity: 1; margin-right: 0; animation: none; }
   .ltelc-animado .r { max-width: 0; opacity: 0; animation: none; }
 }

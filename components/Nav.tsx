@@ -56,7 +56,8 @@ function Desplegable({ boton, children, derecha = false }: { boton: React.ReactN
     return () => document.removeEventListener('click', cerrar)
   }, [])
   return (
-    <details ref={ref} className="group relative">
+    <details ref={ref} className="group relative"
+      onClick={(e) => { if ((e.target as HTMLElement).closest('a') && ref.current) ref.current.open = false }}>
       <summary className="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
         {boton}
         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 transition-transform group-open:rotate-180" fill="currentColor" aria-hidden="true">
@@ -179,7 +180,8 @@ export default function Nav({ usuario, secciones }: { usuario: { nombre: string;
               <div key={s.titulo} className="px-3 pt-4">
                 <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-widest text-neutral-500">{s.titulo}</div>
                 {s.links.map((l) => (
-                  <Link key={l.href} href={l.href}
+                  // el menú se cierra al tocar, así se ve la pantalla de carga mientras llega la solapa
+                  <Link key={l.href} href={l.href} onClick={() => setAbierto(false)}
                     className={`flex items-center rounded-lg px-3 py-2.5 text-[15px] ${esActivo(ruta, l.href)
                       ? 'bg-white/10 font-semibold text-white before:mr-2.5 before:h-4 before:w-1 before:rounded before:bg-acento'
                       : 'text-neutral-300 hover:bg-white/5'}`}>
