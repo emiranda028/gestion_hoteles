@@ -36,42 +36,37 @@ export default async function Page() {
         </p>
       </div>
 
-      <section className="tarjeta overflow-x-auto rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-        <table className="w-full text-sm">
-          <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
-            <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Nombre</th><th className="hidden pr-3 md:table-cell">Rol</th><th className="hidden pr-3 md:table-cell">Ve</th><th className="pr-3">Estado</th><th className="pr-3">Última actividad</th><th className="hidden pr-3 md:table-cell">Inicio de sesión</th><th /></tr>
-          </thead>
-          <tbody>
-            {usuarios.map((u) => (
-              <tr key={u.usuario} className="border-b border-neutral-100 align-top">
-                <td className="py-2 pr-3 font-medium">{u.usuario}</td>
-                <td className="py-2 pr-3">{u.nombre}
-                  {/* en el celular, rol y alcance van debajo del nombre */}
-                  <div className="text-xs text-neutral-500 md:hidden">{ROLES[u.rol]} · {ve(u)}</div></td>
-                <td className="hidden py-2 pr-3 md:table-cell">{ROLES[u.rol]}</td>
-                <td className="hidden py-2 pr-3 md:table-cell">{ve(u)}</td>
-                <td className="py-2 pr-3">{u.activo ? <span className="text-emerald-700">Activo</span> : <span className="text-acento">Inactivo</span>}</td>
-                <td className="py-2 pr-3">{actividad.has(u.usuario)
-                  ? <a href={`/admin/actividad?usuario=${encodeURIComponent(u.usuario)}`} className="underline decoration-neutral-300 hover:decoration-marca">{fecha(actividad.get(u.usuario))}</a>
-                  : <span className="text-neutral-400">—</span>}</td>
-                <td className="hidden py-2 pr-3 text-neutral-500 md:table-cell">{fecha(u.ultimoIngreso)}</td>
-                <td className="py-2">
-                  <details className="text-right">
-                    <summary className="cursor-pointer text-xs text-marca underline">Editar</summary>
-                    <div className="mt-2 text-left"><FormUsuario grupos={grupos} hoteles={hoteles} usuario={u} /></div>
-                    {u.usuario !== yo.usuario && (
-                      <form action={borrarUsuario} className="mt-2">
-                        <input type="hidden" name="usuario" value={u.usuario} />
-                        <button type="submit" className="text-xs text-acento underline">Eliminar usuario</button>
-                      </form>
-                    )}
-                  </details>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      {/* una tarjeta por usuario: al tocar «Editar» el formulario se abre a lo ancho de la tarjeta */}
+      <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {usuarios.map((u) => (
+          <section key={u.usuario} className="tarjeta rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)] md:has-[details[open]]:col-span-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-semibold">{u.nombre}</div>
+                <div className="text-xs text-neutral-500 [overflow-wrap:anywhere]">{u.usuario}</div>
+              </div>
+              {u.activo ? <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Activo</span>
+                : <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs text-acento">Inactivo</span>}
+            </div>
+            <div className="mt-2 text-sm text-neutral-600">{ROLES[u.rol]} · {ve(u)}</div>
+            <div className="mt-1 text-xs text-neutral-500">Última actividad: {actividad.has(u.usuario)
+              ? <a href={`/admin/actividad?usuario=${encodeURIComponent(u.usuario)}`} className="underline">{fecha(actividad.get(u.usuario))}</a>
+              : '—'} · Inicio de sesión: {fecha(u.ultimoIngreso)}</div>
+            <details className="group mt-3 border-t border-neutral-100 pt-3">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-marca [&::-webkit-details-marker]:hidden">
+                <span className="group-open:hidden">Editar ▸</span><span className="hidden group-open:inline">Cerrar edición ▾</span>
+              </summary>
+              <div className="mt-3"><FormUsuario grupos={grupos} hoteles={hoteles} usuario={u} /></div>
+              {u.usuario !== yo.usuario && (
+                <form action={borrarUsuario} className="mt-3">
+                  <input type="hidden" name="usuario" value={u.usuario} />
+                  <button type="submit" className="text-xs text-acento underline">Eliminar usuario</button>
+                </form>
+              )}
+            </details>
+          </section>
+        ))}
+      </div>
 
       <section className="tarjeta max-w-3xl rounded-xl bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
         <h2 className="mb-3 text-base font-bold">Nuevo usuario</h2>
