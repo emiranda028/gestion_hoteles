@@ -91,11 +91,11 @@ function Facturas({ hotel, corte, facturas, previstas, codigo, ejecutar, pendien
         </div>
       </div>
       <div className="max-h-[45vh] overflow-auto rounded-lg border border-neutral-200">
-        <table className="w-full min-w-[46rem] text-sm">
+        <table className="w-full text-sm md:min-w-[46rem]">
           <thead className="sticky top-0 bg-white text-left text-[11px] uppercase tracking-wide text-neutral-500 shadow-[0_1px_0_#e5e5e5]">
             <tr>
               <th className="px-2 py-2"><input type="checkbox" checked={todas && facturas.length > 0} onChange={() => setMarcadas(todas ? [] : facturas.map((f) => f.id))} className="accent-[#b5121b]" /></th>
-              <th>Comprobante</th><th>Emisión</th><th>Vencimiento</th><th className="text-right">Atraso</th><th className="text-right">Saldo</th><th className="pl-4">Cobro previsto</th>
+              <th>Comprobante</th><th className="hidden md:table-cell">Emisión</th><th className="hidden md:table-cell">Vencimiento</th><th className="hidden text-right md:table-cell">Atraso</th><th className="text-right">Saldo</th><th className="pl-3 md:pl-4">Cobro previsto</th>
             </tr>
           </thead>
           <tbody>
@@ -105,12 +105,14 @@ function Facturas({ hotel, corte, facturas, previstas, codigo, ejecutar, pendien
                 <tr key={f.id} className="border-t border-neutral-100">
                   <td className="px-2 py-1.5"><input type="checkbox" checked={marcadas.includes(f.id)} className="accent-[#b5121b]"
                     onChange={() => setMarcadas((m) => (m.includes(f.id) ? m.filter((x) => x !== f.id) : [...m, f.id]))} /></td>
-                  <td className="font-mono text-xs">{url ? <a href={url} target="_blank" rel="noreferrer" className="text-marca underline">{comprobante(f)}</a> : comprobante(f)}</td>
-                  <td>{fechaCortaAR(f.emision)}</td>
-                  <td>{fechaCortaAR(f.vence)}</td>
-                  <td className={`text-right tabular-nums ${d > 90 ? 'font-semibold text-acento' : d > 0 ? 'text-amber-700' : 'text-neutral-400'}`}>{d > 0 ? `${d} d` : 'al día'}</td>
+                  <td className="font-mono text-xs">{url ? <a href={url} target="_blank" rel="noreferrer" className="text-marca underline">{comprobante(f)}</a> : comprobante(f)}
+                    {/* en el celular, vencimiento y atraso debajo del comprobante */}
+                    <div className={`font-sans text-[11px] md:hidden ${d > 90 ? 'font-semibold text-acento' : d > 0 ? 'text-amber-700' : 'text-neutral-400'}`}>vence {fechaCortaAR(f.vence)} · {d > 0 ? `${d} d de atraso` : 'al día'}</div></td>
+                  <td className="hidden md:table-cell">{fechaCortaAR(f.emision)}</td>
+                  <td className="hidden md:table-cell">{fechaCortaAR(f.vence)}</td>
+                  <td className={`hidden text-right tabular-nums md:table-cell ${d > 90 ? 'font-semibold text-acento' : d > 0 ? 'text-amber-700' : 'text-neutral-400'}`}>{d > 0 ? `${d} d` : 'al día'}</td>
                   <td className={`text-right tabular-nums ${f.saldo < 0 ? 'text-emerald-700' : ''}`}>{pesos2(f.saldo)}</td>
-                  <td className="pl-4 text-xs">{previstas[f.id] ? `${fechaCortaAR(previstas[f.id])} · ` : ''}{etiqueta(f.id, dest)}</td>
+                  <td className="pl-3 text-xs md:pl-4">{previstas[f.id] ? `${fechaCortaAR(previstas[f.id])} · ` : ''}{etiqueta(f.id, dest)}</td>
                 </tr>
               )
             })}

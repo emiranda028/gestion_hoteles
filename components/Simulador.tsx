@@ -234,18 +234,18 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
               </ResponsiveContainer>
             </div>
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-sm tabular-nums">
+              <table className="w-full text-xs tabular-nums md:text-sm">
                 <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
-                    <th className="py-1 pr-3">Año</th>
-                    <th className="py-1 pr-3 text-right">Ocupación</th>
-                    <th className="py-1 pr-3 text-right">ADR</th>
-                    <th className="py-1 pr-3 text-right">Ingresos</th>
-                    <th className="py-1 pr-3 text-right">GOP</th>
-                    <th className="py-1 pr-3 text-right">Honorarios</th>
-                    <th className="py-1 pr-3 text-right">Dueño hoy</th>
-                    <th className="py-1 pr-3 text-right">Dueño con gestión</th>
-                    <th className="py-1 text-right">Acumulado extra</th>
+                    <th className="py-1 pr-2 md:pr-3">Año</th>
+                    <th className="hidden py-1 pr-3 text-right md:table-cell">Ocupación</th>
+                    <th className="hidden py-1 pr-3 text-right md:table-cell">ADR</th>
+                    <th className="py-1 pr-2 text-right md:pr-3">Ingresos</th>
+                    <th className="hidden py-1 pr-3 text-right md:table-cell">GOP</th>
+                    <th className="hidden py-1 pr-3 text-right md:table-cell">Honorarios</th>
+                    <th className="hidden py-1 pr-3 text-right md:table-cell">Dueño hoy</th>
+                    <th className="py-1 pr-2 text-right md:pr-3">Dueño<span className="hidden md:inline"> con gestión</span></th>
+                    <th className="py-1 text-right">Acum.<span className="hidden md:inline">ulado extra</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -253,15 +253,15 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
                     const occ = (100 * x.gestion.nochesVendidas) / x.gestion.nochesDisponibles
                     return (
                       <tr key={x.anio} className="border-t border-neutral-100">
-                        <td className="py-1.5 pr-3">{x.anio}</td>
-                        <td className="py-1.5 pr-3 text-right">{pct(occ)}</td>
-                        <td className="py-1.5 pr-3 text-right">{dinero(x.gestion.ingHab / x.gestion.nochesVendidas, m)}</td>
-                        <td className="py-1.5 pr-3 text-right">{dinero(x.gestion.ingTot, m)}</td>
-                        <td className="py-1.5 pr-3 text-right">{dinero(x.gestion.gop, m)}</td>
-                        <td className="py-1.5 pr-3 text-right">{dinero(x.gestion.honorarios, m)}</td>
-                        <td className="py-1.5 pr-3 text-right">{dinero(x.actual.noi, m)}</td>
-                        <td className="py-1.5 pr-3 text-right font-medium">{dinero(x.gestion.noi, m)}</td>
-                        <td className={`py-1.5 text-right ${x.acumuladoDueno < 0 ? 'text-acento' : 'text-emerald-700'}`}>{dinero(x.acumuladoDueno, m)}</td>
+                        <td className="py-1.5 pr-2 md:pr-3">{x.anio}</td>
+                        <td className="hidden py-1.5 pr-3 text-right md:table-cell">{pct(occ)}</td>
+                        <td className="hidden py-1.5 pr-3 text-right md:table-cell">{dinero(x.gestion.ingHab / x.gestion.nochesVendidas, m)}</td>
+                        <td className="py-1.5 pr-2 text-right md:pr-3"><span className="md:hidden">{dinero(x.gestion.ingTot, m, true)}</span><span className="hidden md:inline">{dinero(x.gestion.ingTot, m)}</span></td>
+                        <td className="hidden py-1.5 pr-3 text-right md:table-cell">{dinero(x.gestion.gop, m)}</td>
+                        <td className="hidden py-1.5 pr-3 text-right md:table-cell">{dinero(x.gestion.honorarios, m)}</td>
+                        <td className="hidden py-1.5 pr-3 text-right md:table-cell">{dinero(x.actual.noi, m)}</td>
+                        <td className="py-1.5 pr-2 text-right font-medium md:pr-3"><span className="md:hidden">{dinero(x.gestion.noi, m, true)}</span><span className="hidden md:inline">{dinero(x.gestion.noi, m)}</span></td>
+                        <td className={`py-1.5 text-right ${x.acumuladoDueno < 0 ? 'text-acento' : 'text-emerald-700'}`}><span className="md:hidden">{dinero(x.acumuladoDueno, m, true)}</span><span className="hidden md:inline">{dinero(x.acumuladoDueno, m)}</span></td>
                       </tr>
                     )
                   })}
@@ -276,7 +276,7 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
 
           <div className="grid gap-4 xl:grid-cols-2 [&>*]:min-w-0">
             <Tarjeta titulo="Comparación de modalidades (año en régimen)">
-              <div className="overflow-x-auto"><table className="w-full text-sm tabular-nums">
+              <div className="overflow-x-auto"><table className="w-full text-xs tabular-nums md:text-sm">
                 <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
                     <th className="py-1 pr-3">Modalidad</th>
@@ -307,17 +307,19 @@ export default function Simulador({ referencias }: { referencias: Referencia[] }
               <table className="w-full text-xs tabular-nums">
                 <thead>
                   <tr className="text-neutral-500">
-                    <th className="py-1 pr-2 text-left font-normal">Ocup. \ ADR</th>
-                    {PASOS_ADR.map((a) => <th key={a} className="py-1 pl-3 text-right font-normal">{a > 0 ? '+' : ''}{a}%</th>)}
+                    <th className="py-1 pr-1 text-left font-normal md:pr-2">Ocup.\ADR</th>
+                    {PASOS_ADR.map((a) => <th key={a} className="py-1 pl-1 text-right font-normal md:pl-3">{a > 0 ? '+' : ''}{a}%</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {PASOS_OCC.map((o, i) => (
                     <tr key={o} className="border-t border-neutral-100">
-                      <td className="py-1.5 pr-2 text-neutral-500">{o > 0 ? '+' : ''}{o} pts</td>
+                      <td className="whitespace-nowrap py-1.5 pr-1 text-neutral-500 md:pr-2">{o > 0 ? '+' : ''}{o}<span className="hidden md:inline"> pts</span></td>
                       {sens[i].map((v, j) => (
-                        <td key={j} className={`py-1.5 pl-3 text-right ${o === 0 && PASOS_ADR[j] === 0 ? 'font-semibold text-marca' : ''} ${v < 0 ? 'text-acento' : ''}`}>
-                          {dinero(v, m, true)}
+                        <td key={j} className={`py-1.5 pl-1 text-right text-[11px] md:pl-3 md:text-xs ${o === 0 && PASOS_ADR[j] === 0 ? 'font-semibold text-marca' : ''} ${v < 0 ? 'text-acento' : ''}`}>
+                          {/* en el celular sin el signo de moneda, para que entren las 5 columnas */}
+                          <span className="md:hidden">{dinero(v, m, true).replace(/^-?(US)?\$\u00a0/, (x) => (x.startsWith('-') ? '-' : ''))}</span>
+                          <span className="hidden md:inline">{dinero(v, m, true)}</span>
                         </td>
                       ))}
                     </tr>
@@ -382,13 +384,13 @@ function TablaResultados({ actual, gestion, moneda }: { actual: Resultado; gesti
   const f = (v: number, t: 'dinero' | 'pct' | 'entero') => (t === 'pct' ? pct(v) : t === 'entero' ? entero(v) : dinero(v, moneda))
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm tabular-nums">
+      <table className="w-full text-xs tabular-nums md:text-sm">
         <thead className="text-left text-xs uppercase text-neutral-500">
           <tr>
             <th className="py-1 pr-3">Concepto</th>
             <th className="py-1 pr-3 text-right">Hoy</th>
-            <th className="py-1 pr-3 text-right">Con nuestra gestión</th>
-            <th className="py-1 text-right">Diferencia</th>
+            <th className="py-1 pr-3 text-right">Con <span className="hidden md:inline">nuestra </span>gestión</th>
+            <th className="hidden py-1 text-right md:table-cell">Diferencia</th>
           </tr>
         </thead>
         <tbody>
@@ -402,7 +404,7 @@ function TablaResultados({ actual, gestion, moneda }: { actual: Resultado; gesti
                 <td className="py-1.5 pr-3">{nombre}</td>
                 <td className="py-1.5 pr-3 text-right">{f(x, t)}</td>
                 <td className="py-1.5 pr-3 text-right">{f(y, t)}</td>
-                <td className={`py-1.5 text-right ${dif === 0 ? 'text-neutral-400' : mejor ? 'text-emerald-700' : 'text-acento'}`}>
+                <td className={`hidden py-1.5 text-right md:table-cell ${dif === 0 ? 'text-neutral-400' : mejor ? 'text-emerald-700' : 'text-acento'}`}>
                   {t === 'pct' ? `${dif > 0 ? '+' : ''}${decimal(dif)} pts` : f(dif, t)}
                 </td>
               </tr>

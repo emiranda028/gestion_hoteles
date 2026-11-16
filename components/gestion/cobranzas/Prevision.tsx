@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useMemo, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { fijarPrevista } from '@/app/cobranzas/acciones'
 import { destino, prevision, semanas, type Prevision } from '@/lib/gestion/cobranzas/calculo'
 import { Boton, fechaCortaAR } from '../comunes'
@@ -23,6 +23,9 @@ export default function PrevisionVista({ hotel, filas, prev, corte, previstas, a
     { t: 'Más adelante', v: (p: Prevision) => p.despues },
   ] as { t: string; sub?: string; v: (p: Prevision) => number; alerta?: boolean }[]
 
+  const [colMovil, setColMovil] = useState(2)
+  const vis = (i: number) => (i === colMovil ? '' : 'hidden md:table-cell')
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -37,12 +40,18 @@ export default function PrevisionVista({ hotel, filas, prev, corte, previstas, a
           }}>Llevar las vencidas sin fecha a la semana 1</Boton>
         )}
       </div>
+      <label className="flex items-center gap-2 text-xs text-neutral-500 md:hidden">Ver
+        <select value={colMovil} onChange={(e) => setColMovil(Number(e.target.value))}
+          className="rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900">
+          {cols.map((c, i) => <option key={c.t} value={i}>{c.t}{c.sub ? ` (${c.sub})` : ''}</option>)}
+        </select>
+      </label>
       <div className="tarjeta overflow-x-auto rounded-xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-        <table className="w-full min-w-[64rem] text-sm">
+        <table className="w-full text-sm md:min-w-[64rem]">
           <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
             <tr>
               <th className="px-3 py-2">Cliente</th>
-              {cols.map((c) => <th key={c.t} className={`px-2 text-right ${c.alerta ? 'text-acento' : ''}`}>{c.t}{c.sub && <div className="font-normal normal-case tracking-normal text-neutral-400">{c.sub}</div>}</th>)}
+              {cols.map((c, i) => <th key={c.t} className={`px-2 text-right ${vis(i)} ${c.alerta ? 'text-acento' : ''}`}>{c.t}{c.sub && <div className="font-normal normal-case tracking-normal text-neutral-400">{c.sub}</div>}</th>)}
               <th className="px-3 text-right">Total</th>
             </tr>
           </thead>
@@ -50,9 +59,9 @@ export default function PrevisionVista({ hotel, filas, prev, corte, previstas, a
             {porCliente.map(({ f, p }) => (
               <tr key={f.codigo} onClick={() => abrir(f.codigo)} className="cursor-pointer border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="px-3 py-1.5 font-medium">{f.cliente.nombre}</td>
-                {cols.map((c) => {
+                {cols.map((c, i) => {
                   const v = c.v(p)
-                  return <td key={c.t} className={`px-2 text-right tabular-nums ${!v ? 'text-neutral-300' : c.alerta ? 'font-semibold text-acento' : ''}`}>{v ? pesos(v) : '—'}</td>
+                  return <td key={c.t} className={`px-2 text-right tabular-nums ${vis(i)} ${!v ? 'text-neutral-300' : c.alerta ? 'font-semibold text-acento' : ''}`}>{v ? pesos(v) : '—'}</td>
                 })}
                 <td className="px-3 text-right font-semibold tabular-nums">{pesos(p.total)}</td>
               </tr>
@@ -61,7 +70,7 @@ export default function PrevisionVista({ hotel, filas, prev, corte, previstas, a
           <tfoot className="border-t-2 border-marca font-bold">
             <tr>
               <td className="px-3 py-2">Total</td>
-              {cols.map((c) => <td key={c.t} className={`px-2 text-right tabular-nums ${c.alerta && c.v(prev) ? 'text-acento' : ''}`}>{pesos(c.v(prev))}</td>)}
+              {cols.map((c, i) => <td key={c.t} className={`px-2 text-right tabular-nums ${vis(i)} ${c.alerta && c.v(prev) ? 'text-acento' : ''}`}>{pesos(c.v(prev))}</td>)}
               <td className="px-3 text-right tabular-nums">{pesos(prev.total)}</td>
             </tr>
           </tfoot>

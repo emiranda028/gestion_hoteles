@@ -1,7 +1,8 @@
 'use client'
+import { useState } from 'react'
 import type { FlashHotel, Hotel } from '@/lib/datos'
 import { dinero, fechaLarga, pct, variacionTexto } from '@/lib/formato'
-import { Tarjeta } from './ui'
+import { Segmentado, Tarjeta } from './ui'
 
 type Trio = [number | null, number | null, number | null]
 const CERO: Trio = [0, 0, 0]
@@ -30,7 +31,15 @@ function kpis(b: ReturnType<typeof base>) {
   })
 }
 
+type Grupo = 'occ' | 'adr' | 'revpar' | 'tot'
+const GRUPOS: { valor: Grupo; texto: string }[] = [
+  { valor: 'occ', texto: 'Ocupación' }, { valor: 'adr', texto: 'ADR' }, { valor: 'revpar', texto: 'RevPAR' }, { valor: 'tot', texto: 'Ingresos' },
+]
+
 export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; hoteles: Hotel[] }) {
+  // en el celular se ve un indicador por vez (se elige arriba); en la compu, todos
+  const [grupo, setGrupo] = useState<Grupo>('occ')
+  const vis = (g: Grupo) => (g === grupo ? '' : 'hidden md:table-cell')
   let filas = hoteles
     .filter((h) => h.activo)
     .map((h) => ({ h, f: flash.find((x) => x.h === h.id) }))
@@ -47,11 +56,11 @@ export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; h
     ant: deHoy.every((x) => x.f.anterior) ? kpis(sumar(deHoy.map((x) => base(x.f.anterior)))) : null,
   }
 
-  const Celda = ({ v, ant, tipo }: { v: number; ant?: number | null; tipo: 'pct' | 'usd' | 'usdk' }) => {
+  const Celda = ({ v, ant, tipo, g }: { v: number; ant?: number | null; tipo: 'pct' | 'usd' | 'usdk'; g: Grupo }) => {
     const txt = tipo === 'pct' ? pct(v) : dinero(v, 'USD', tipo === 'usdk')
     const dif = ant === undefined || ant === null ? null : tipo === 'pct' ? v - ant : ant ? (v - ant) / ant : null
     return (
-      <td className="py-1.5 pl-3 text-right">
+      <td className={`py-1.5 pl-3 text-right ${vis(g)}`}>
         <div>{txt}</div>
         {dif !== null && (
           <div className={`text-[11px] ${dif >= 0 ? 'text-emerald-600' : 'text-acento'}`}>
@@ -70,28 +79,29 @@ export default function FlashDelDia({ flash, hoteles }: { flash: FlashHotel[]; h
         {nombre}
         {fechaFila && fechaFila !== fecha && <div className="text-[11px] font-normal text-acento">al {fechaLarga(fechaFila)}</div>}
       </td>
-      {[0, 1, 2].map((i) => <Celda key={`o${i}`} v={act[i].occ} ant={ant?.[i].occ} tipo="pct" />)}
-      {[0, 1, 2].map((i) => <Celda key={`a${i}`} v={act[i].adr} ant={ant?.[i].adr} tipo="usd" />)}
-      {[0, 1].map((i) => <Celda key={`r${i}`} v={act[i].revpar} ant={ant?.[i].revpar} tipo="usd" />)}
-      {[0, 1, 2].map((i) => <Celda key={`t${i}`} v={act[i].tot} ant={ant?.[i].tot} tipo="usdk" />)}
+      {[0, 1, 2].map((i) => <Celda key={`o${i}`} g="occ" v={act[i].occ} ant={ant?.[i].occ} tipo="pct" />)}
+      {[0, 1, 2].map((i) => <Celda key={`a${i}`} g="adr" v={act[i].adr} ant={ant?.[i].adr} tipo="usd" />)}
+      {[0, 1].map((i) => <Celda key={`r${i}`} g="revpar" v={act[i].revpar} ant={ant?.[i].revpar} tipo="usd" />)}
+      {[0, 1, 2].map((i) => <Celda key={`t${i}`} g="tot" v={act[i].tot} ant={ant?.[i].tot} tipo="usdk" />)}
     </tr>
   )
 
-  const cab = (t: string, n: number) => <th colSpan={n} className="border-l border-neutral-100 py-1 pl-3 text-center">{t}</th>
+  const cab = (t: string, n: number, g: Grupo) => <th colSpan={n} className={`border-l border-neutral-100 py-1 pl-3 text-center ${vis(g)}`}>{t}</th>
   return (
     <Tarjeta titulo={`Manager Flash · ${fechaLarga(fecha)}`}
       extra={<span className="text-xs text-neutral-500">Día · mes a la fecha · año a la fecha, vs. mismo día del año anterior</span>}>
+      <div className="mb-3 md:hidden"><Segmentado valor={grupo} onChange={setGrupo} opciones={GRUPOS} /></div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm tabular-nums">
           <thead className="text-xs uppercase text-neutral-500">
             <tr>
               <th />
-              {cab('Ocupación', 3)}{cab('ADR', 3)}{cab('RevPAR', 2)}{cab('Ingresos totales', 3)}
+              {cab('Ocupación', 3, 'occ')}{cab('ADR', 3, 'adr')}{cab('RevPAR', 2, 'revpar')}{cab('Ingresos totales', 3, 'tot')}
             </tr>
             <tr className="text-[11px]">
               <th className="py-1 text-left">Hotel</th>
-              {['Día', 'Mes', 'Año', 'Día', 'Mes', 'Año', 'Día', 'Mes', 'Día', 'Mes', 'Año'].map((t, i) => (
-                <th key={i} className="py-1 pl-3 text-right font-normal">{t}</th>
+              {(['occ', 'occ', 'occ', 'adr', 'adr', 'adr', 'revpar', 'revpar', 'tot', 'tot', 'tot'] as Grupo[]).map((g, i) => (
+                <th key={i} className={`py-1 pl-3 text-right font-normal ${vis(g)}`}>{['Día', 'Mes', 'Año', 'Día', 'Mes', 'Año', 'Día', 'Mes', 'Día', 'Mes', 'Año'][i]}</th>
               ))}
             </tr>
           </thead>

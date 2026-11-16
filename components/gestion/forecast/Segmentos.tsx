@@ -22,15 +22,15 @@ export default function Segmentos({ p, ctx, moneda }: { p: Props; ctx: ReturnTyp
           {nombre}
         </td>
         <td className="px-2 text-right tabular-nums">{entero(a.rn)}</td>
-        <td className="px-2 text-right tabular-nums">{dinero(a.adr, moneda)}</td>
-        <td className="px-2 text-right tabular-nums">{dinero(a.revenue, moneda)}</td>
-        <td className="px-2 text-right tabular-nums opacity-80">{entero(b.rn)}</td>
-        <td className="px-2 text-right tabular-nums opacity-80">{dinero(b.adr, moneda)}</td>
-        <td className="px-2 text-right tabular-nums opacity-80">{dinero(b.revenue, moneda)}</td>
+        <td className="hidden px-2 text-right tabular-nums md:table-cell">{dinero(a.adr, moneda)}</td>
+        <td className="px-2 text-right tabular-nums"><span className="md:hidden">{dinero(a.revenue, moneda, true)}</span><span className="hidden md:inline">{dinero(a.revenue, moneda)}</span></td>
+        <td className="hidden px-2 text-right tabular-nums opacity-80 md:table-cell">{entero(b.rn)}</td>
+        <td className="hidden px-2 text-right tabular-nums opacity-80 md:table-cell">{dinero(b.adr, moneda)}</td>
+        <td className="hidden px-2 text-right tabular-nums opacity-80 md:table-cell">{dinero(b.revenue, moneda)}</td>
         <td className={`px-2 text-right tabular-nums ${nivel === 0 ? '' : color(vb)}`}>{vb === null ? '—' : `${vb >= 0 ? '+' : ''}${pct(vb)}`}</td>
         {hayAnt && <>
-          <td className="px-2 text-right tabular-nums opacity-80">{dinero(c.revenue, moneda)}</td>
-          <td className={`px-2 text-right tabular-nums ${nivel === 0 ? '' : color(vc)}`}>{vc === null ? '—' : `${vc >= 0 ? '+' : ''}${pct(vc)}`}</td>
+          <td className="hidden px-2 text-right tabular-nums opacity-80 md:table-cell">{dinero(c.revenue, moneda)}</td>
+          <td className={`hidden px-2 text-right tabular-nums md:table-cell ${nivel === 0 ? '' : color(vc)}`}>{vc === null ? '—' : `${vc >= 0 ? '+' : ''}${pct(vc)}`}</td>
         </>}
       </tr>
     )
@@ -47,9 +47,9 @@ export default function Segmentos({ p, ctx, moneda }: { p: Props; ctx: ReturnTyp
         </div>
       </div>
       <div className="tarjeta overflow-x-auto rounded-xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-        <table className="w-full min-w-[60rem] text-sm">
+        <table className="w-full text-xs md:min-w-[60rem] md:text-sm">
           <thead className="text-[11px] uppercase tracking-wide text-neutral-500">
-            <tr className="border-b border-neutral-200">
+            <tr className="hidden border-b border-neutral-200 md:table-row">
               <th />
               <th colSpan={3} className="border-l border-neutral-200 px-2 pt-2 text-center text-neutral-800">{ctx.etiquetaActual}</th>
               <th colSpan={3} className="border-l border-neutral-200 px-2 pt-2 text-center text-acento">Budget</th>
@@ -58,10 +58,10 @@ export default function Segmentos({ p, ctx, moneda }: { p: Props; ctx: ReturnTyp
             </tr>
             <tr className="border-b-2 border-marca text-right">
               <th className="px-3 py-2 text-left">Segmento</th>
-              <th className="border-l border-neutral-200 px-2">RN</th><th className="px-2">ADR</th><th className="px-2">Revenue</th>
-              <th className="border-l border-neutral-200 px-2">RN</th><th className="px-2">ADR</th><th className="px-2">Revenue</th>
-              <th className="border-l border-neutral-200 px-2">Rev. %</th>
-              {hayAnt && <><th className="border-l border-neutral-200 px-2">Revenue</th><th className="px-2">Var. %</th></>}
+              <th className="border-l border-neutral-200 px-2">RN</th><th className="hidden px-2 md:table-cell">ADR</th><th className="px-2">Revenue</th>
+              <th className="hidden border-l border-neutral-200 px-2 md:table-cell">RN</th><th className="hidden px-2 md:table-cell">ADR</th><th className="hidden px-2 md:table-cell">Revenue</th>
+              <th className="border-l border-neutral-200 px-2"><span className="md:hidden">vs Budget</span><span className="hidden md:inline">Rev. %</span></th>
+              {hayAnt && <><th className="hidden border-l border-neutral-200 px-2 md:table-cell">Revenue</th><th className="hidden px-2 md:table-cell">Var. %</th></>}
             </tr>
           </thead>
           <tbody>

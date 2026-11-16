@@ -12,6 +12,9 @@ export default function MesAMes({ p, ctx, moneda }: { p: Props; ctx: ReturnType<
   const [metrica, setMetrica] = useState<Metrica>('revenue')
   const [esc, setEsc] = useState<Escenario | 'vsbudget'>('forecast')
   const todos = Array.from({ length: 12 }, (_, i) => i)
+  // en el celular se ve un mes por vez (se elige arriba) y el total del año
+  const [mesMovil, setMesMovil] = useState(() => Math.max(0, ctx.cerrados.lastIndexOf(true)))
+  const visMes = (m: number) => (m === mesMovil ? '' : 'hidden md:table-cell')
   const valor = (claves: string[], meses: number[]) => {
     // la ocupación de una categoría es su aporte a la ocupación total (noches propias sobre habitaciones del hotel)
     const k = (e: Escenario) => {
@@ -36,7 +39,7 @@ export default function MesAMes({ p, ctx, moneda }: { p: Props; ctx: ReturnType<
       <td className="sticky left-0 z-10 bg-inherit px-3 py-1.5">{nombre}</td>
       {todos.map((m) => {
         const v = valor(claves, [m])
-        return <td key={m} className={`px-2 text-right tabular-nums ${clase(v)} ${esc === 'forecast' && !ctx.cerrados[m] ? 'italic' : ''}`}>{fmt(v)}</td>
+        return <td key={m} className={`px-2 text-right tabular-nums ${visMes(m)} ${clase(v)} ${esc === 'forecast' && !ctx.cerrados[m] ? 'italic' : ''}`}>{fmt(v)}</td>
       })}
       <td className={`px-3 text-right font-bold tabular-nums ${clase(valor(claves, todos))}`}>{fmt(valor(claves, todos))}</td>
     </tr>
@@ -53,14 +56,18 @@ export default function MesAMes({ p, ctx, moneda }: { p: Props; ctx: ReturnType<
           {p.previo && <option value="anterior">Año anterior</option>}
           <option value="vsbudget">Forecast vs Budget (%)</option>
         </select>
+        <select value={mesMovil} onChange={(e) => setMesMovil(Number(e.target.value))}
+          className="rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-sm md:hidden">
+          {MESES.map((m, i) => <option key={m} value={i}>{m}{ctx.cerrados[i] ? ' (cerrado)' : ''}</option>)}
+        </select>
         {esc === 'forecast' && <span className="text-xs text-neutral-500">En cursiva, los meses proyectados.</span>}
       </div>
       <div className="tarjeta overflow-x-auto rounded-xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-        <table className="w-full min-w-[72rem] text-sm">
+        <table className="w-full text-sm md:min-w-[72rem]">
           <thead className="border-b-2 border-marca text-right text-[11px] uppercase tracking-wide text-neutral-500">
             <tr>
               <th className="sticky left-0 bg-white px-3 py-2 text-left">Segmento</th>
-              {MESES.map((m, i) => <th key={m} className={`px-2 ${ctx.cerrados[i] ? 'text-neutral-800' : ''}`}>{m}{ctx.cerrados[i] ? ' ●' : ''}</th>)}
+              {MESES.map((m, i) => <th key={m} className={`px-2 ${visMes(i)} ${ctx.cerrados[i] ? 'text-neutral-800' : ''}`}>{m}{ctx.cerrados[i] ? ' ●' : ''}</th>)}
               <th className="px-3">Año</th>
             </tr>
           </thead>

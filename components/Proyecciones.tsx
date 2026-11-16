@@ -24,6 +24,9 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
   const [horizonte, setHorizonte] = useState('12')
   const [metrica, setMetrica] = useState<Metrica>('occ')
   const [escenarios, setEscenarios] = useState<Escenario[]>(ESCENARIOS_BASE)
+  // en el celular el detalle mensual muestra un escenario por vez
+  const [escMovil, setEscMovil] = useState(ESCENARIOS_BASE[1]?.id ?? ESCENARIOS_BASE[0].id)
+  const vis = (id: string) => (id === escMovil ? '' : 'hidden md:table-cell')
   const [ajustes, setAjustes] = useState<{ tendenciaOcc?: number; crecimientoAdr?: number }>({})
   const cod = 'USD'
 
@@ -157,19 +160,22 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
           </div>
 
           <Tarjeta titulo="Detalle mensual proyectado">
+            <div className="mb-3 md:hidden">
+              <Segmentado valor={escMovil} onChange={setEscMovil} opciones={escenarios.map((e) => ({ valor: e.id, texto: e.nombre }))} />
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm tabular-nums">
                 <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
                     <th className="py-2 pr-4">Mes</th>
                     {escenarios.map((e) => (
-                      <th key={e.id} colSpan={3} className="py-2 pr-4 text-center" style={{ color: e.color }}>{e.nombre}</th>
+                      <th key={e.id} colSpan={3} className={`py-2 pr-4 text-center ${vis(e.id)}`} style={{ color: e.color }}>{e.nombre}</th>
                     ))}
                   </tr>
                   <tr className="text-[11px]">
                     <th />
                     {escenarios.map((e) => (
-                      <FragmentoCab key={e.id} />
+                      <FragmentoCab key={e.id} clase={vis(e.id)} />
                     ))}
                   </tr>
                 </thead>
@@ -180,7 +186,7 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
                       {escenarios.map((e) => {
                         const p = proy.find((x) => x.mes === mes && x.escenario === e.id)!
                         return (
-                          <FragmentoFila key={e.id} occ={pct(p.occ)} adr={dinero(p.adr, cod)} ing={dinero(p.ingTot, cod, true)} />
+                          <FragmentoFila key={e.id} clase={vis(e.id)} occ={pct(p.occ)} adr={dinero(p.adr, cod)} ing={dinero(p.ingTot, cod, true)} />
                         )
                       })}
                     </tr>
@@ -195,22 +201,22 @@ export default function Proyecciones({ datos }: { datos: Datos }) {
   )
 }
 
-function FragmentoCab() {
+function FragmentoCab({ clase }: { clase: string }) {
   return (
     <>
-      <th className="py-1 pr-2 text-right font-normal">Ocup.</th>
-      <th className="py-1 pr-2 text-right font-normal">ADR</th>
-      <th className="py-1 pr-4 text-right font-normal">Ingresos</th>
+      <th className={`py-1 pr-2 text-right font-normal ${clase}`}>Ocup.</th>
+      <th className={`py-1 pr-2 text-right font-normal ${clase}`}>ADR</th>
+      <th className={`py-1 pr-4 text-right font-normal ${clase}`}>Ingresos</th>
     </>
   )
 }
 
-function FragmentoFila({ occ, adr, ing }: { occ: string; adr: string; ing: string }) {
+function FragmentoFila({ occ, adr, ing, clase }: { occ: string; adr: string; ing: string; clase: string }) {
   return (
     <>
-      <td className="py-1.5 pr-2 text-right">{occ}</td>
-      <td className="py-1.5 pr-2 text-right">{adr}</td>
-      <td className="py-1.5 pr-4 text-right">{ing}</td>
+      <td className={`py-1.5 pr-2 text-right ${clase}`}>{occ}</td>
+      <td className={`py-1.5 pr-2 text-right ${clase}`}>{adr}</td>
+      <td className={`py-1.5 pr-4 text-right ${clase}`}>{ing}</td>
     </>
   )
 }

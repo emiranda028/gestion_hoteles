@@ -142,16 +142,16 @@ export default function CuentasCorporativas({ demo, filas, tarifas, ocupadasHote
   const TablaGrupo = ({ titulo, datos }: { titulo: string; datos: ReturnType<typeof agrupar> }) => (
     <Tarjeta titulo={titulo}>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm tabular-nums">
+        <table className="w-full text-xs tabular-nums md:text-sm">
           <thead className="border-b-2 border-marca text-right text-[11px] uppercase tracking-wide text-neutral-500">
-            <tr><th className="py-2 pr-2 text-left">{titulo.replace('Por ', '')}</th><th className="pr-2">Cuentas</th><th className="pr-2">Noches</th><th className="pr-2">ADR</th><th className="pr-2">Ingresos</th><th>vs {anioAnt}</th></tr>
+            <tr><th className="py-2 pr-2 text-left">{titulo.replace('Por ', '')}</th><th className="hidden pr-2 md:table-cell">Cuentas</th><th className="pr-2">Noches</th><th className="hidden pr-2 md:table-cell">ADR</th><th className="pr-2">Ingresos</th><th>vs {anioAnt}</th></tr>
           </thead>
           <tbody>
             {datos.map((g) => (
               <tr key={g.nombre} className="border-b border-neutral-100 text-right">
                 <td className="py-1.5 pr-2 text-left capitalize">{g.nombre.toLowerCase()}</td>
-                <td className="pr-2">{g.n.size}</td><td className="pr-2">{entero(g.a.rn)}</td><td className="pr-2">{dinero(adr(g.a), 'USD')}</td>
-                <td className="pr-2">{dinero(g.a.rev, 'USD')}</td><td className="text-xs"><Var a={g.a.rn} b={g.b.rn} /></td>
+                <td className="hidden pr-2 md:table-cell">{g.n.size}</td><td className="pr-2">{entero(g.a.rn)}</td><td className="hidden pr-2 md:table-cell">{dinero(adr(g.a), 'USD')}</td>
+                <td className="pr-2">{dinero(g.a.rev, 'USD', true)}</td><td className="text-xs"><Var a={g.a.rn} b={g.b.rn} /></td>
               </tr>
             ))}
           </tbody>
@@ -219,8 +219,8 @@ export default function CuentasCorporativas({ demo, filas, tarifas, ocupadasHote
           <table className="w-full text-sm tabular-nums">
             <thead className="border-b-2 border-marca text-right text-[11px] uppercase tracking-wide text-neutral-500">
               <tr>
-                <th className="py-2 pr-2 text-left">#</th><th className="pr-2 text-left">Cuenta</th><th className="pr-2 text-left">Rubro</th><th className="pr-2 text-left">Ejecutivo</th>
-                <th className="pr-2">Noches</th><th className="pr-2">vs {anioAnt}</th><th className="pr-2">ADR</th><th className="pr-2">Tarifa RFP {anio}</th><th>Ingresos</th>
+                <th className="hidden py-2 pr-2 text-left md:table-cell">#</th><th className="py-2 pr-2 text-left">Cuenta</th><th className="hidden pr-2 text-left md:table-cell">Rubro</th><th className="hidden pr-2 text-left md:table-cell">Ejecutivo</th>
+                <th className="pr-2">Noches</th><th className="hidden pr-2 md:table-cell">vs {anioAnt}</th><th className="hidden pr-2 md:table-cell">ADR</th><th className="hidden pr-2 md:table-cell">Tarifa RFP {anio}</th><th>Ingresos</th>
               </tr>
             </thead>
             <tbody>
@@ -229,24 +229,27 @@ export default function CuentasCorporativas({ demo, filas, tarifas, ocupadasHote
                 const tarifa = t?.tarifas[0] ?? null
                 return (
                   <tr key={x.cuenta} className="border-b border-neutral-100 text-right">
-                    <td className="py-1.5 pr-2 text-left text-neutral-400">{i + 1}</td>
-                    <td className="pr-2 text-left font-medium">{x.cuenta}</td>
-                    <td className="pr-2 text-left text-xs capitalize text-neutral-500">{rubroDe(x.cuenta).toLowerCase()}</td>
-                    <td className="pr-2 text-left text-xs text-neutral-500">{ejecDe(x.cuenta)}</td>
-                    <td className="pr-2">{entero(x.a.rn)}</td>
-                    <td className="pr-2 text-xs"><Var a={x.a.rn} b={x.b.rn} /></td>
-                    <td className="pr-2">{dinero(adr(x.a), 'USD')}</td>
-                    <td className="pr-2 text-xs text-neutral-500" title={t ? `${t.cuenta} · ${t.producto}` : undefined}>
+                    <td className="hidden py-1.5 pr-2 text-left text-neutral-400 md:table-cell">{i + 1}</td>
+                    <td className="py-1.5 pr-2 text-left font-medium [overflow-wrap:anywhere]">{x.cuenta}
+                      {/* en el celular, rubro y ejecutivo van debajo del nombre */}
+                      <div className="text-[11px] font-normal capitalize text-neutral-500 md:hidden">{rubroDe(x.cuenta).toLowerCase()} · {ejecDe(x.cuenta)}</div></td>
+                    <td className="hidden pr-2 text-left text-xs capitalize text-neutral-500 md:table-cell">{rubroDe(x.cuenta).toLowerCase()}</td>
+                    <td className="hidden pr-2 text-left text-xs text-neutral-500 md:table-cell">{ejecDe(x.cuenta)}</td>
+                    <td className="pr-2">{entero(x.a.rn)}<div className="text-[11px] md:hidden"><Var a={x.a.rn} b={x.b.rn} /></div></td>
+                    <td className="hidden pr-2 text-xs md:table-cell"><Var a={x.a.rn} b={x.b.rn} /></td>
+                    <td className="hidden pr-2 md:table-cell">{dinero(adr(x.a), 'USD')}</td>
+                    <td className="hidden pr-2 text-xs text-neutral-500 md:table-cell" title={t ? `${t.cuenta} · ${t.producto}` : undefined}>
                       {tarifa ? dinero(tarifa, 'USD') : t?.descuento ? `-${t.descuento}%` : '—'}
                     </td>
-                    <td>{dinero(x.a.rev, 'USD')}</td>
+                    <td>{dinero(x.a.rev, 'USD', true)}</td>
                   </tr>
                 )
               })}
             </tbody>
             <tfoot className="border-t-2 border-marca text-right font-semibold">
-              <tr><td className="py-2 text-left" colSpan={4}>Total ({ranking.length} cuentas)</td><td className="pr-2">{entero(sumar(ranking.map((x) => x.a)).rn)}</td><td />
-                <td className="pr-2">{dinero(adr(sumar(ranking.map((x) => x.a))), 'USD')}</td><td /><td>{dinero(sumar(ranking.map((x) => x.a)).rev, 'USD')}</td></tr>
+              <tr><td className="py-2 text-left md:hidden">Total ({ranking.length})</td><td className="hidden py-2 text-left md:table-cell" colSpan={4}>Total ({ranking.length} cuentas)</td>
+                <td className="pr-2">{entero(sumar(ranking.map((x) => x.a)).rn)}</td><td className="hidden md:table-cell" />
+                <td className="hidden pr-2 md:table-cell">{dinero(adr(sumar(ranking.map((x) => x.a))), 'USD')}</td><td className="hidden md:table-cell" /><td>{dinero(sumar(ranking.map((x) => x.a)).rev, 'USD', true)}</td></tr>
             </tfoot>
           </table>
         </div>

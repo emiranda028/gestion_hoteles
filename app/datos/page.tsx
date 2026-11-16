@@ -95,11 +95,11 @@ export default async function Page() {
       <section className="tarjeta rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
         <h2 className="mb-2 text-sm font-semibold text-neutral-700">Cobertura por hotel (últimos 30 días)</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs md:text-sm">
             <thead className="text-left text-xs uppercase text-neutral-500">
               <tr>
                 <th className="py-2 pr-4">Hotel</th>
-                <th className="py-2 pr-4">Desde</th>
+                <th className="hidden py-2 pr-4 md:table-cell">Desde</th>
                 <th className="py-2 pr-4">Último día</th>
                 <th className="py-2 pr-4 text-right">Días cargados</th>
                 <th className="py-2">Días faltantes</th>
@@ -109,7 +109,7 @@ export default async function Page() {
               {cobertura.map((c) => (
                 <tr key={c.id} className="border-t border-neutral-100 align-top">
                   <td className="py-2 pr-4 font-medium">{c.nombre}</td>
-                  <td className="py-2 pr-4">{fechaLarga(c.desde)}</td>
+                  <td className="hidden py-2 pr-4 md:table-cell">{fechaLarga(c.desde)}</td>
                   <td className={`py-2 pr-4 ${c.hasta < d.hasta ? 'text-acento' : ''}`}>{fechaLarga(c.hasta)}</td>
                   <td className="py-2 pr-4 text-right tabular-nums">{c.total}</td>
                   <td className="py-2 text-xs text-neutral-600">

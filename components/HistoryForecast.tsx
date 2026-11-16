@@ -239,14 +239,14 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
         extra={<Selector valor={filtroDia} onChange={setFiltroDia}
           opciones={[{ valor: 'todos', texto: 'Todos los días' }, ...DIAS.slice(1).concat(DIAS[0]).map((d) => ({ valor: d, texto: d }))]} />}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm tabular-nums">
+          <table className="w-full text-xs tabular-nums md:text-sm">
             <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
               <tr>
-                <th className="py-2 pr-2">Fecha</th><th className="pr-2">Día</th><th className="pr-2" />
-                <th className="w-36 pr-2">Ocupadas</th><th className="pr-2 text-right">Individ.</th><th className="pr-2 text-right">Grupos</th>
-                <th className="pr-2 text-right">% Ocup.</th><th className="pr-2 text-right">Año ant.</th>
-                <th className="pr-2 text-right">Llegadas</th><th className="pr-2 text-right">Salidas</th>
-                <th className="w-32 pr-2 text-right">Ingresos</th><th className="pr-2 text-right">ADR</th><th className="text-right">Huéspedes</th>
+                <th className="py-2 pr-2">Fecha</th><th className="hidden pr-2 md:table-cell">Día</th><th className="hidden pr-2 md:table-cell" />
+                <th className="pr-2 text-right md:w-36 md:text-left">Ocupadas</th><th className="hidden pr-2 text-right md:table-cell">Individ.</th><th className="hidden pr-2 text-right md:table-cell">Grupos</th>
+                <th className="pr-2 text-right">% Ocup.</th><th className="hidden pr-2 text-right md:table-cell">Año ant.</th>
+                <th className="hidden pr-2 text-right md:table-cell">Llegadas</th><th className="hidden pr-2 text-right md:table-cell">Salidas</th>
+                <th className="pr-2 text-right md:w-32">Ingresos</th><th className="text-right md:pr-2">ADR</th><th className="hidden text-right md:table-cell">Huéspedes</th>
               </tr>
             </thead>
             <tbody>
@@ -257,53 +257,56 @@ export default function HistoryForecast({ demo, hoteles, hfDias, bonvoyDias }: P
                 return (
                   <tr key={d.f} onClick={() => setDiaSel(d.f)}
                     className={`cursor-pointer border-b border-neutral-100 hover:bg-neutral-50 ${d.f === dia.f ? 'bg-neutral-100' : ''} ${d.f === hoy ? 'border-t-2 border-t-acento' : ''}`}>
-                    <td className="py-1.5 pr-2">{fechaCorta(d.f)}</td>
-                    <td className="pr-2 capitalize text-neutral-600">{diaSemana(d.f)}</td>
-                    <td className="pr-2">
+                    <td className="py-1.5 pr-2">{fechaCorta(d.f)}
+                      {/* en el celular: día abreviado y si es real o proyectado, debajo de la fecha */}
+                      <div className={`text-[10px] capitalize md:hidden ${d.tipo === 'History' ? 'text-neutral-500' : 'text-[#2d5d99]'}`}>{diaSemana(d.f).slice(0, 3)} · {d.tipo === 'History' ? 'real' : 'proy.'}</div></td>
+                    <td className="hidden pr-2 capitalize text-neutral-600 md:table-cell">{diaSemana(d.f)}</td>
+                    <td className="hidden pr-2 md:table-cell">
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${d.tipo === 'History' ? 'bg-neutral-200 text-neutral-700' : 'bg-[#dbe7f6] text-[#2d5d99]'}`}>
                         {d.tipo === 'History' ? 'Real' : 'Proy.'}
                       </span>
                     </td>
                     <td className="pr-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3.5 flex-1 rounded-sm bg-neutral-100">
+                      <div className="flex items-center justify-end gap-2 md:justify-start">
+                        <div className="hidden h-3.5 flex-1 rounded-sm bg-neutral-100 md:block">
                           <div className="h-3.5 rounded-sm" style={{ width: `${(100 * d.occ) / maxOcc}%`, background: d.tipo === 'History' ? '#6b6b6b' : FORECAST }} />
                         </div>
                         <span className="w-9 text-right">{entero(d.occ)}</span>
                       </div>
                     </td>
-                    <td className="pr-2 text-right">{entero(d.dind)}</td>
-                    <td className="pr-2 text-right">{entero(d.dgrp)}</td>
+                    <td className="hidden pr-2 text-right md:table-cell">{entero(d.dind)}</td>
+                    <td className="hidden pr-2 text-right md:table-cell">{entero(d.dgrp)}</td>
                     <td className="pr-2 text-right">
                       <span className="inline-flex items-center gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full" style={{ background: semaforo(occ) }} />{pct(occ, 1)}
                       </span>
                     </td>
-                    <td className="pr-2 text-right text-xs text-neutral-500">
+                    <td className="hidden pr-2 text-right text-xs text-neutral-500 md:table-cell">
                       {ant ? <span className={occ >= 100 * ant.pct ? 'text-emerald-700' : 'text-acento'}>{variacionTexto(occ - 100 * ant.pct, true)}</span> : '—'}
                     </td>
-                    <td className="pr-2 text-right">{entero(d.arr)}</td>
-                    <td className="pr-2 text-right">{entero(d.dep)}</td>
-                    <td className="pr-2 text-right" style={{ background: `rgba(26,143,46,${(0.28 * d.rev) / maxRev})` }}>{dinero(d.rev, 'USD')}</td>
-                    <td className={`pr-2 text-right ${adr >= adrMes ? 'text-emerald-700' : 'text-acento'}`}>{dinero(adr, 'USD')}</td>
-                    <td className="text-right">{entero(d.pax)}</td>
+                    <td className="hidden pr-2 text-right md:table-cell">{entero(d.arr)}</td>
+                    <td className="hidden pr-2 text-right md:table-cell">{entero(d.dep)}</td>
+                    <td className="pr-2 text-right" style={{ background: `rgba(26,143,46,${(0.28 * d.rev) / maxRev})` }}><span className="md:hidden">{dinero(d.rev, 'USD', true)}</span><span className="hidden md:inline">{dinero(d.rev, 'USD')}</span></td>
+                    <td className={`text-right md:pr-2 ${adr >= adrMes ? 'text-emerald-700' : 'text-acento'}`}>{dinero(adr, 'USD')}</td>
+                    <td className="hidden text-right md:table-cell">{entero(d.pax)}</td>
                   </tr>
                 )
               })}
             </tbody>
             <tfoot className="border-t-2 border-marca font-semibold">
               <tr>
-                <td className="py-2" colSpan={3}>Total {filtroDia !== 'todos' ? `(${filtroDia})` : ''}</td>
+                <td className="py-2 md:hidden">Total {filtroDia !== 'todos' ? `(${filtroDia})` : ''}</td>
+                <td className="hidden py-2 md:table-cell" colSpan={3}>Total {filtroDia !== 'todos' ? `(${filtroDia})` : ''}</td>
                 <td className="pr-2 text-right">{entero(totTabla.occ)}</td>
-                <td className="pr-2 text-right">{entero(tabla.reduce((s, d) => s + d.dind, 0))}</td>
-                <td className="pr-2 text-right">{entero(tabla.reduce((s, d) => s + d.dgrp, 0))}</td>
+                <td className="hidden pr-2 text-right md:table-cell">{entero(tabla.reduce((s, d) => s + d.dind, 0))}</td>
+                <td className="hidden pr-2 text-right md:table-cell">{entero(tabla.reduce((s, d) => s + d.dgrp, 0))}</td>
                 <td className="pr-2 text-right">{pct(totTabla.pct, 2)}</td>
-                <td />
-                <td className="pr-2 text-right">{entero(tabla.reduce((s, d) => s + d.arr, 0))}</td>
-                <td className="pr-2 text-right">{entero(tabla.reduce((s, d) => s + d.dep, 0))}</td>
+                <td className="hidden md:table-cell" />
+                <td className="hidden pr-2 text-right md:table-cell">{entero(tabla.reduce((s, d) => s + d.arr, 0))}</td>
+                <td className="hidden pr-2 text-right md:table-cell">{entero(tabla.reduce((s, d) => s + d.dep, 0))}</td>
                 <td className="pr-2 text-right">{dinero(totTabla.rev, 'USD')}</td>
-                <td className="pr-2 text-right">{dinero(totTabla.adr, 'USD')}</td>
-                <td className="text-right">{entero(tabla.reduce((s, d) => s + d.pax, 0))}</td>
+                <td className="text-right md:pr-2">{dinero(totTabla.adr, 'USD')}</td>
+                <td className="hidden text-right md:table-cell">{entero(tabla.reduce((s, d) => s + d.pax, 0))}</td>
               </tr>
             </tfoot>
           </table>

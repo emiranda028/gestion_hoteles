@@ -48,12 +48,12 @@ export default function ClientesTabla({ filas, total, listas, abrir }: {
       </div>
 
       <div className="tarjeta overflow-x-auto rounded-xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-        <table className="w-full min-w-[64rem] text-sm">
+        <table className="w-full text-sm md:min-w-[64rem]">
           <thead className="sticky top-0 border-b-2 border-marca bg-white text-left text-[11px] uppercase tracking-wide text-neutral-500">
             <tr>
-              <th className="px-3 py-2">Cliente</th><th className="px-2">Responsable · estado</th>
-              {TRAMOS.map((t) => <th key={t.k} className="px-2 text-right">{t.t}</th>)}
-              <th className="px-2 text-right">Total</th><th className="px-3">Última gestión</th>
+              <th className="px-3 py-2">Cliente</th><th className="hidden px-2 md:table-cell">Responsable · estado</th>
+              {TRAMOS.map((t) => <th key={t.k} className="hidden px-2 text-right md:table-cell">{t.t}</th>)}
+              <th className="px-2 text-right">Total</th><th className="hidden px-3 md:table-cell">Última gestión</th>
             </tr>
           </thead>
           <tbody>
@@ -64,18 +64,23 @@ export default function ClientesTabla({ filas, total, listas, abrir }: {
                   <td className="px-3 py-2">
                     <div className="font-semibold">{f.cliente.nombre}</div>
                     <div className="text-[11px] text-neutral-400">{f.codigo}{f.cliente.grupo ? ' · Grupo' : ''}{f.cliente.condicion ? ` · ${f.cliente.condicion}` : ''}</div>
+                    {/* en el celular: lo vencido y la última gestión, en lugar de las columnas por antigüedad */}
+                    <div className="text-[11px] md:hidden">
+                      {f.a.vencido > 0 ? <span className="font-semibold text-acento">vencido {pesos(f.a.vencido)}</span> : <span className="text-neutral-500">sin deuda vencida</span>}
+                      {f.ultima && <span className="text-neutral-500"> · gestión hace {d} días</span>}
+                    </div>
                   </td>
-                  <td className="px-2 text-xs">
+                  <td className="hidden px-2 text-xs md:table-cell">
                     <div>{f.cliente.respCobranza || <span className="text-neutral-400">Sin responsable</span>}</div>
                     <div className="text-neutral-500">{f.cliente.estado || '—'}</div>
                   </td>
                   {TRAMOS.map((t) => (
-                    <td key={t.k} className={`px-2 text-right tabular-nums ${!f.a[t.k] ? 'text-neutral-300' : t.k === 'dmas' || t.k === 'd120' ? 'font-semibold text-acento' : ''}`}>
+                    <td key={t.k} className={`hidden px-2 text-right tabular-nums md:table-cell ${!f.a[t.k] ? 'text-neutral-300' : t.k === 'dmas' || t.k === 'd120' ? 'font-semibold text-acento' : ''}`}>
                       {f.a[t.k] ? pesos(f.a[t.k]) : '—'}
                     </td>
                   ))}
                   <td className="px-2 text-right font-bold tabular-nums">{pesos(f.a.total)}</td>
-                  <td className="px-3 text-xs">
+                  <td className="hidden px-3 text-xs md:table-cell">
                     {f.ultima ? <><div className={d !== null && d > 15 && f.a.vencido > 0 ? 'font-semibold text-acento' : ''}>hace {d} días</div><div className="max-w-48 truncate text-neutral-500">{f.ultima.texto}</div></>
                       : <span className="text-neutral-400">—</span>}
                   </td>
@@ -85,9 +90,10 @@ export default function ClientesTabla({ filas, total, listas, abrir }: {
           </tbody>
           <tfoot className="border-t-2 border-marca font-bold">
             <tr>
-              <td className="px-3 py-2" colSpan={2}>{visibles.length === filas.length ? 'Total' : `Total filtrado (${visibles.length} de ${filas.length})`}</td>
-              {TRAMOS.map((t) => <td key={t.k} className="px-2 text-right tabular-nums">{pesos(suma(t.k))}</td>)}
-              <td className="px-2 text-right tabular-nums">{pesos(suma('total'))}</td><td />
+              <td className="px-3 py-2 md:hidden">Total</td>
+              <td className="hidden px-3 py-2 md:table-cell" colSpan={2}>{visibles.length === filas.length ? 'Total' : `Total filtrado (${visibles.length} de ${filas.length})`}</td>
+              {TRAMOS.map((t) => <td key={t.k} className="hidden px-2 text-right tabular-nums md:table-cell">{pesos(suma(t.k))}</td>)}
+              <td className="px-2 text-right tabular-nums">{pesos(suma('total'))}</td><td className="hidden md:table-cell" />
             </tr>
           </tfoot>
         </table>

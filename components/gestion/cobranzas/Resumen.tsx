@@ -77,16 +77,17 @@ export default function ResumenCobranzas({ filas, total, prev, corte, abrir }: {
           ))}
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[40rem] text-sm">
+          <table className="w-full text-sm md:min-w-[40rem]">
             <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
-              <tr><th className="py-2">Condición</th>{TRAMOS.map((t) => <th key={t.k} className="text-right">{t.t}</th>)}<th className="text-right">Total</th></tr>
+              <tr><th className="py-2">Condición</th>{TRAMOS.map((t) => <th key={t.k} className="hidden text-right md:table-cell">{t.t}</th>)}<th className="text-right md:hidden">Vencido</th><th className="text-right">Total</th></tr>
             </thead>
             <tbody>
               {porCond.map((x) => (
                 <tr key={x.k} className="border-b border-neutral-100">
                   <td className="py-1.5">{x.k} <span className="text-xs text-neutral-400">· {x.fs.length}</span></td>
-                  {TRAMOS.map((t) => <td key={t.k} className={`text-right tabular-nums ${x.a[t.k] ? '' : 'text-neutral-300'}`}>{x.a[t.k] ? pesos(x.a[t.k]) : '—'}</td>)}
-                  <td className="text-right font-semibold tabular-nums">{pesos(x.a.total)}</td>
+                  {TRAMOS.map((t) => <td key={t.k} className={`hidden text-right tabular-nums md:table-cell ${x.a[t.k] ? '' : 'text-neutral-300'}`}>{x.a[t.k] ? pesos(x.a[t.k]) : '—'}</td>)}
+                  <td className={`text-right tabular-nums md:hidden ${x.a.vencido > 0 ? 'text-acento' : 'text-neutral-300'}`}>{x.a.vencido > 0 ? millones(x.a.vencido) : '—'}</td>
+                  <td className="text-right font-semibold tabular-nums"><span className="md:hidden">{millones(x.a.total)}</span><span className="hidden md:inline">{pesos(x.a.total)}</span></td>
                 </tr>
               ))}
             </tbody>

@@ -328,27 +328,31 @@ export default function Tablero({ datos }: { datos: ReturnType<typeof datosTable
               <table className="w-full text-sm">
                 <thead className="text-left text-xs uppercase text-neutral-500">
                   <tr>
-                    <th className="py-2 pr-4">Hotel</th>
-                    <th className="py-2 pr-4 text-right">Ocupación</th>
-                    <th className="py-2 pr-4 text-right">Var.</th>
-                    <th className="py-2 pr-4 text-right">ADR</th>
-                    <th className="py-2 pr-4 text-right">Var.</th>
-                    <th className="py-2 pr-4 text-right">RevPAR</th>
-                    <th className="py-2 pr-4 text-right">Ingresos totales</th>
-                    <th className="py-2 text-right">Var.</th>
+                    <th className="py-2 pr-3 md:pr-4">Hotel</th>
+                    <th className="py-2 pr-3 text-right md:pr-4">Ocupación</th>
+                    <th className="hidden py-2 pr-4 text-right md:table-cell">Var.</th>
+                    <th className="py-2 pr-3 text-right md:pr-4">ADR</th>
+                    <th className="hidden py-2 pr-4 text-right md:table-cell">Var.</th>
+                    <th className="hidden py-2 pr-4 text-right md:table-cell">RevPAR</th>
+                    <th className="py-2 text-right md:pr-4">Ingresos<span className="hidden md:inline"> totales</span></th>
+                    <th className="hidden py-2 text-right md:table-cell">Var.</th>
                   </tr>
                 </thead>
                 <tbody className="tabular-nums">
+                  {/* en el celular la variación va debajo de cada valor y no se muestra el RevPAR, para no deslizar */}
                   {porHotel.map(({ id, nombre, x, y }) => (
-                    <tr key={id} className="border-t border-neutral-100">
-                      <td className="py-2 pr-4 font-medium text-neutral-800">{nombre}</td>
-                      <td className="py-2 pr-4 text-right">{pct(x.occ)}</td>
-                      <td className="py-2 pr-4 text-right text-neutral-500">{y.disp ? variacionTexto(x.occ - y.occ, true) : '—'}</td>
-                      <td className="py-2 pr-4 text-right">{dinero(x.adr, cod)}</td>
-                      <td className="py-2 pr-4 text-right text-neutral-500">{variacionTexto(variacion(x.adr, y.adr))}</td>
-                      <td className="py-2 pr-4 text-right">{dinero(x.revpar, cod)}</td>
-                      <td className="py-2 pr-4 text-right">{dinero(x.ingTot, cod)}</td>
-                      <td className="py-2 text-right text-neutral-500">{variacionTexto(variacion(x.ingTot, y.ingTot))}</td>
+                    <tr key={id} className="border-t border-neutral-100 align-top">
+                      <td className="py-2 pr-3 font-medium text-neutral-800 md:pr-4">{nombre}</td>
+                      <td className="py-2 pr-3 text-right md:pr-4">{pct(x.occ)}
+                        <div className="text-[11px] text-neutral-500 md:hidden">{y.disp ? variacionTexto(x.occ - y.occ, true) : '—'}</div></td>
+                      <td className="hidden py-2 pr-4 text-right text-neutral-500 md:table-cell">{y.disp ? variacionTexto(x.occ - y.occ, true) : '—'}</td>
+                      <td className="py-2 pr-3 text-right md:pr-4">{dinero(x.adr, cod)}
+                        <div className="text-[11px] text-neutral-500 md:hidden">{variacionTexto(variacion(x.adr, y.adr))}</div></td>
+                      <td className="hidden py-2 pr-4 text-right text-neutral-500 md:table-cell">{variacionTexto(variacion(x.adr, y.adr))}</td>
+                      <td className="hidden py-2 pr-4 text-right md:table-cell">{dinero(x.revpar, cod)}</td>
+                      <td className="py-2 text-right md:pr-4">{dinero(x.ingTot, cod, true)}
+                        <div className="text-[11px] text-neutral-500 md:hidden">{variacionTexto(variacion(x.ingTot, y.ingTot))}</div></td>
+                      <td className="hidden py-2 text-right text-neutral-500 md:table-cell">{variacionTexto(variacion(x.ingTot, y.ingTot))}</td>
                     </tr>
                   ))}
                 </tbody>

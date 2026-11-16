@@ -81,7 +81,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
               <h2 className="mb-3 text-base font-bold">Por usuario</h2>
               <table className="w-full text-sm">
                 <thead className="border-b-2 border-marca text-left text-[11px] uppercase tracking-wide text-neutral-500">
-                  <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Última actividad</th><th className="pr-3 text-right">Días</th><th className="pr-3 text-right">Consultas</th><th>Lo que más mira</th></tr>
+                  <tr><th className="py-2 pr-3">Usuario</th><th className="pr-3">Última actividad</th><th className="hidden pr-3 text-right md:table-cell">Días</th><th className="pr-3 text-right">Consultas</th><th className="hidden md:table-cell">Lo que más mira</th></tr>
                 </thead>
                 <tbody>
                   {porUsuario.map((x) => (
@@ -89,9 +89,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
                       <td className="py-2 pr-3"><Link href={enlace({ usuario: x.u })} className="font-medium underline decoration-neutral-300 hover:decoration-marca">{nombre(x.u)}</Link>
                         <div className="text-xs text-neutral-400">{x.u}</div></td>
                       <td className="whitespace-nowrap py-2 pr-3">{fechaHora(x.ultima)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{x.dias}</td>
+                      <td className="hidden py-2 pr-3 text-right tabular-nums md:table-cell">{x.dias}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{x.vistas}</td>
-                      <td className="py-2 text-neutral-600">{x.top.map((t) => `${nombreSolapa(t.s)} (${t.n})`).join(' · ') || '—'}</td>
+                      <td className="hidden py-2 text-neutral-600 md:table-cell">{x.top.map((t) => `${nombreSolapa(t.s)} (${t.n})`).join(' · ') || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
